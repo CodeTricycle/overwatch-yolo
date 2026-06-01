@@ -1,0 +1,19 @@
+{
+    "verbosity": "debug",
+    "detection_radius": 150,
+    "threshold": 0.6,
+    "h_sensitivity": 2.0,
+    "v_sensitivity": 1.8,
+    "neural_net_path": "model/ow.pt",
+    "activation_button": "VK_XBUTTON1",
+    "fire_mode": "按下",
+    "v_compensation": 0.75,
+    "h_compensation": 0.0,
+    "yaw_pixel_count": 6550,
+    "pitch_pixel_count": 3220,
+    "kalman_filter_enabled": false,
+    "kalman_process_noise": 5.0,
+    "kalman_measurement_noise": 2.0,
+    "kalman_coast_max_frames": 5,
+    "kalman_reinit_distance_threshold": 40.0
+}
