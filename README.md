@@ -26,7 +26,7 @@
 
 ```bash
 # 克隆仓库
-git clone https://github.com/your-repo/overwatch-yolo.git
+git clone https://github.com/CodeTricycle/overwatch-yolo.git
 cd overwatch-yolo
 
 # 创建虚拟环境（推荐）
