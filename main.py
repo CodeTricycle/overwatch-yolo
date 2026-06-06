@@ -914,8 +914,8 @@ class App:
             w.setMaximum(d["max"])
             if "step" in d:
                 w.setSingleStep(d["step"])
-            spin.setMinimum(d["xform"](d["min"]))
-            spin.setMaximum(d["xform"](d["max"]))
+            spin.setMinimum(min(d["xform"](d["min"]), d["xform"](d["max"])))
+            spin.setMaximum(max(d["xform"](d["min"]), d["xform"](d["max"])))
             x1 = d["xform"](1)
             if x1 >= 1.0:
                 spin.setDecimals(0)
@@ -931,11 +931,8 @@ class App:
                 w.setToolTip(d["tip"])
                 spin.setToolTip(d["tip"])
             s.bind(
-                lambda _d=d: (
-                    self._msg.broadcast(
-                        _d["cmd"], self._sliders[_d["key"]].value, *_d["targets"]
-                    ),
-                    self._save_settings(),
+                lambda _d=d: self._msg.broadcast(
+                    _d["cmd"], self._sliders[_d["key"]].value, *_d["targets"]
                 )
             )
             self._sliders[d["key"]] = s
@@ -944,26 +941,20 @@ class App:
         ui = self._ui
         ui.OpVideoButton.clicked.connect(self._flip_video)
         ui.OpYoloButton.clicked.connect(self._flip_yolo)
+        ui.saveConfigButton.clicked.connect(self._save_settings)
         ui.chooseModelButton.clicked.connect(self._browse_model)
         ui.triggerMethodComboBox.currentTextChanged.connect(self._change_trigger)
-        ui.triggerMethodComboBox.currentTextChanged.connect(lambda: self._save_settings())
         ui.HotkeyPushButton.clicked.connect(
             lambda: self._rebind_key(ui.HotkeyPushButton.text())
         )
         ui.kalmanFilterCheckBox.stateChanged.connect(
-            lambda: (
-                self._msg.broadcast(
-                    KF_ON, ui.kalmanFilterCheckBox.isChecked(), "aim"
-                ),
-                self._save_settings(),
+            lambda: self._msg.broadcast(
+                KF_ON, ui.kalmanFilterCheckBox.isChecked(), "aim"
             )
         )
         ui.humanizeCheckBox.stateChanged.connect(
-            lambda: (
-                self._msg.broadcast(
-                    HM_ON, ui.humanizeCheckBox.isChecked(), "aim"
-                ),
-                self._save_settings(),
+            lambda: self._msg.broadcast(
+                HM_ON, ui.humanizeCheckBox.isChecked(), "aim"
             )
         )
 
@@ -976,7 +967,6 @@ class App:
         if vk != "UNKNOWN":
             self._ui.HotkeyPushButton.setText(name)
             self._msg.broadcast(BIND_KEY, vk, "aim")
-            self._save_settings()
 
     def _sync_video_btn(self):
         self._ui.OpVideoButton.setText(
@@ -1038,7 +1028,6 @@ class App:
         if path:
             self._ui.modelFileLabel.setText(os.path.basename(path))
             self._model_path = path
-            self._save_settings()
 
     def _save_settings(self):
         Settings.update_many(
@@ -1064,7 +1053,8 @@ class App:
                 "humanize_jitter": self._sliders["hmj"].value,
             }
         )
-        Log.debug("配置已自动保存", tag="Config")
+        Log.success("当前配置已保存", tag="Config")
+        self._msg.q("log").put((EVT_UI_LOG, "配置已保存"))
 
     def _paint(self):
         fq = self._msg.q("frame")
@@ -1122,12 +1112,6 @@ class App:
         self._msg.q("log").put((EVT_UI_LOG, "配置读取成功"))
 
         self._model_path = Settings.get("neural_net_path", "yolov11n.pt")
-        for s in self._sliders.values():
-            s._w.blockSignals(True)
-            s._d.blockSignals(True)
-        self._ui.kalmanFilterCheckBox.blockSignals(True)
-        self._ui.humanizeCheckBox.blockSignals(True)
-        self._ui.triggerMethodComboBox.blockSignals(True)
 
         self._sliders["conf"].set(int(Settings.get("threshold", 0.5) * 100))
         self._sliders["sx"].set(int(Settings.get("h_sensitivity", 0.5) * 100))
@@ -1166,13 +1150,6 @@ class App:
         hm = Settings.get("humanize_enabled", False)
         self._ui.humanizeCheckBox.setChecked(hm)
         self._msg.broadcast(HM_ON, hm, "aim")
-
-        for s in self._sliders.values():
-            s._w.blockSignals(False)
-            s._d.blockSignals(False)
-        self._ui.kalmanFilterCheckBox.blockSignals(False)
-        self._ui.humanizeCheckBox.blockSignals(False)
-        self._ui.triggerMethodComboBox.blockSignals(False)
 
     def _watch_status(self):
         t = QTimer(self._ui)
