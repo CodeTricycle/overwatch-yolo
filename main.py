@@ -47,6 +47,11 @@ from core.constants import (
     KF_MN,
     KF_COAST,
     KF_REINIT,
+    HM_ON,
+    HM_MAX,
+    HM_REACT,
+    HM_ALPHA,
+    HM_JITTER,
     EVT_READY,
     EVT_LOG,
     EVT_ERR,
@@ -60,6 +65,7 @@ from core.log import Log
 from core import input_handler
 from core import hotkey
 from core.kalman import KalmanTracker
+from core.humanize import Humanizer
 
 Settings.flush()
 
@@ -87,6 +93,11 @@ class AimState:
     valid_cy: Optional[float] = None
     box_w: float = 0.0
     box_h: float = 0.0
+    hm_on: bool = True
+    hm_max: float = 12.0
+    hm_react: float = 80.0
+    hm_alpha: float = 0.55
+    hm_jitter: float = 0.4
 
 
 class Messenger:
@@ -396,10 +407,21 @@ class AimWorker:
             kf_on=Settings.get("kalman_filter_enabled", False),
             kf_coast=int(Settings.get("kalman_coast_max_frames", 5)),
             kf_reinit_dist=float(Settings.get("kalman_reinit_distance_threshold", 40.0)),
+            hm_on=bool(Settings.get("humanize_enabled", True)),
+            hm_max=float(Settings.get("humanize_max_speed", 12.0)),
+            hm_react=float(Settings.get("humanize_reaction_dist", 80.0)),
+            hm_alpha=float(Settings.get("humanize_alpha", 0.55)),
+            hm_jitter=float(Settings.get("humanize_jitter", 0.4)),
         )
         self._kf = KalmanTracker(
             process_noise=Settings.get("kalman_process_noise", 5.0),
             measurement_noise=Settings.get("kalman_measurement_noise", 2.0),
+        )
+        self._hm = Humanizer(
+            max_speed=Settings.get("humanize_max_speed", 12.0),
+            reaction_dist=Settings.get("humanize_reaction_dist", 80.0),
+            alpha=Settings.get("humanize_alpha", 0.55),
+            jitter=Settings.get("humanize_jitter", 0.4),
         )
         self._last_uid = 0
 
@@ -449,6 +471,11 @@ class AimWorker:
             KF_MN: lambda: self._rebuild_kf(mn=v),
             KF_COAST: lambda: setattr(st, "kf_coast", int(v)),
             KF_REINIT: lambda: setattr(st, "kf_reinit_dist", float(v)),
+            HM_ON: lambda: self._toggle_humanize(v),
+            HM_MAX: lambda: (setattr(st, "hm_max", float(v)), self._hm.set_max_speed(v)),
+            HM_REACT: lambda: (setattr(st, "hm_react", float(v)), self._hm.set_reaction_dist(v)),
+            HM_ALPHA: lambda: (setattr(st, "hm_alpha", float(v)), self._hm.set_alpha(v)),
+            HM_JITTER: lambda: (setattr(st, "hm_jitter", float(v)), self._hm.set_jitter(v)),
         }
         fn = mapping.get(c)
         if fn:
@@ -458,6 +485,10 @@ class AimWorker:
         self._st.kf_on = on
         if not on:
             self._kf.reset()
+
+    def _toggle_humanize(self, on):
+        self._st.hm_on = bool(on)
+        self._hm.reset()
 
     def _rebuild_kf(self, pn=None, mn=None):
         self._kf = KalmanTracker(
@@ -507,7 +538,11 @@ class AimWorker:
         return mx, my, math.sqrt(tx**2 + ty**2)
 
     def _fire(self, mx, my):
-        ix, iy = round(mx / 2), round(my / 2)
+        if self._st.hm_on:
+            sx, sy = self._hm.shape(mx, my)
+        else:
+            sx, sy = mx / 2, my / 2
+        ix, iy = round(sx), round(sy)
         if ix != 0 or iy != 0:
             input_handler.move_mouse(ix, iy)
 
@@ -540,10 +575,13 @@ class AimWorker:
         mx, my, _ = self._compute_offset(cx, cy, x1, y1, x2, y2)
         if self._should_fire(dist < st.det_radius):
             self._fire(mx, my)
+        else:
+            self._hm.reset()
 
     def _on_miss(self):
         st = self._st
         if not (st.kf_on and self._kf.is_initialized()):
+            self._hm.reset()
             return
         if self._kf.coast_frames < st.kf_coast:
             p = self._kf.predict()
@@ -554,19 +592,23 @@ class AimWorker:
             )
             if self._should_fire(od < st.det_radius):
                 self._fire(mx, my)
+            else:
+                self._hm.reset()
         elif self._kf.coast_frames >= st.kf_coast:
             self._kf.reset()
             st.valid_cx = st.valid_cy = None
+            self._hm.reset()
 
 
 class LazySlider:
-    def __init__(self, widget, display, xform, formatter, interval=200):
+    def __init__(self, widget, spinbox, xform, formatter, interval=200):
         self._w = widget
-        self._d = display
+        self._d = spinbox
         self._x = xform
         self._f = formatter
         self._val = None
         self._held = False
+        self._syncing = False
         self._cb: Optional[Callable] = None
         self._timer = QTimer()
         self._timer.setInterval(interval)
@@ -575,6 +617,7 @@ class LazySlider:
         widget.sliderMoved.connect(self._slide)
         widget.sliderReleased.connect(self._release)
         widget.valueChanged.connect(self._change)
+        spinbox.valueChanged.connect(self._on_spin)
 
     @property
     def value(self):
@@ -585,9 +628,28 @@ class LazySlider:
 
     def set(self, raw: int):
         self._w.setValue(raw)
+        v = self._x(raw)
+        self._val = v
+        self._syncing = True
+        self._d.setValue(v)
+        self._syncing = False
 
     def _show(self, v):
-        self._d.display(self._f(v))
+        if self._syncing:
+            return
+        self._syncing = True
+        self._d.setValue(v)
+        self._syncing = False
+
+    def _on_spin(self, v):
+        if self._syncing:
+            return
+        self._syncing = True
+        self._w.setValue(int(round(v / self._x(1))) if self._x(1) != 0 else int(round(v)))
+        self._val = v
+        self._syncing = False
+        if not self._timer.isActive():
+            self._timer.start()
 
     def _grab(self):
         self._held = True
@@ -646,76 +708,171 @@ SLIDER_DEFS = [
     {
         "key": "conf",
         "widget": "confSlider",
-        "lcd": "confNumber",
+        "lcd": "confSpinBox",
         "min": 0,
         "max": 100,
         "xform": lambda v: v / 100,
         "fmt": lambda v: f"{v:.2f}",
         "targets": ["yolo"],
         "cmd": CONF_SET,
+        "tip": "置信度阈值：低于此值的目标将被忽略，值越高检测越严格",
     },
     {
         "key": "sx",
         "widget": "lockSpeedXHorizontalSlider",
-        "lcd": "lockSpeedXLcdNumber",
+        "lcd": "lockSpeedXSpinBox",
         "min": 0,
-        "max": 100,
-        "xform": lambda v: v / 10,
-        "fmt": lambda v: f"{v:.1f}",
+        "max": 1000,
+        "xform": lambda v: v / 100,
+        "fmt": lambda v: f"{v:.2f}",
         "targets": ["aim"],
         "cmd": SPD_X,
+        "tip": "水平灵敏度：控制水平方向的瞄准移动速度",
     },
     {
         "key": "sy",
         "widget": "lockSpeedYHorizontalSlider",
-        "lcd": "lockSpeedYLcdNumber",
+        "lcd": "lockSpeedYSpinBox",
         "min": 0,
-        "max": 100,
-        "xform": lambda v: v / 10,
-        "fmt": lambda v: f"{v:.1f}",
+        "max": 1000,
+        "xform": lambda v: v / 100,
+        "fmt": lambda v: f"{v:.2f}",
         "targets": ["aim"],
         "cmd": SPD_Y,
+        "tip": "垂直灵敏度：控制垂直方向的瞄准移动速度",
     },
     {
         "key": "ar",
         "widget": "aimRangeHorizontalSlider",
-        "lcd": "aimRangeLcdNumber",
+        "lcd": "aimRangeSpinBox",
         "min": 0,
         "max": 280,
         "xform": lambda v: v,
         "fmt": lambda v: str(int(v)),
         "targets": ["aim", "yolo"],
         "cmd": RANGE_SET,
+        "tip": "检测半径：以屏幕中心为圆心的搜索范围（像素）",
     },
     {
         "key": "ox",
         "widget": "offset_centerxVerticalSlider",
-        "lcd": "offset_centerxNumber",
+        "lcd": "offset_centerxSpinBox",
         "min": 0,
         "max": 100,
         "xform": lambda v: 1 - (v / 50.0),
         "fmt": lambda v: f"{v:.2f}",
         "targets": ["aim"],
         "cmd": OFF_X,
+        "tip": "水平补偿：调整水平方向的瞄准偏移，向左或向右微调",
     },
     {
         "key": "oy",
         "widget": "offset_centeryVerticalSlider",
-        "lcd": "offset_centeryNumber",
+        "lcd": "offset_centerySpinBox",
         "min": 0,
         "max": 100,
         "xform": lambda v: v / 100.0,
         "fmt": lambda v: f"{v:.2f}",
         "targets": ["aim"],
         "cmd": OFF_Y,
+        "tip": "垂直补偿：调整垂直方向的瞄准偏移，向上或向下微调",
     },
-]
-
-SPINBOX_BINDINGS = [
-    ("kalmanProcessNoiseDoubleSpinBox", KF_PN, "aim"),
-    ("kalmanMeasurementNoiseDoubleSpinBox", KF_MN, "aim"),
-    ("kalmanCoastFramesSpinBox", KF_COAST, "aim"),
-    ("kalmanReinitDistDoubleSpinBox", KF_REINIT, "aim"),
+    {
+        "key": "kpn",
+        "widget": "kalmanProcessNoiseSlider",
+        "lcd": "kalmanProcessNoiseSpinBox",
+        "min": 1,
+        "max": 500,
+        "xform": lambda v: v / 10,
+        "fmt": lambda v: f"{v:.1f}",
+        "targets": ["aim"],
+        "cmd": KF_PN,
+        "tip": "过程噪声：值越大预测越灵活，能更快跟上目标方向变化",
+    },
+    {
+        "key": "kmn",
+        "widget": "kalmanMeasurementNoiseSlider",
+        "lcd": "kalmanMeasurementNoiseSpinBox",
+        "min": 1,
+        "max": 200,
+        "xform": lambda v: v / 10,
+        "fmt": lambda v: f"{v:.1f}",
+        "targets": ["aim"],
+        "cmd": KF_MN,
+        "tip": "测量噪声：值越大越信任预测而非检测，可减少抖动",
+    },
+    {
+        "key": "kcf",
+        "widget": "kalmanCoastFramesSlider",
+        "lcd": "kalmanCoastFramesSpinBox",
+        "min": 1,
+        "max": 30,
+        "xform": lambda v: v,
+        "fmt": lambda v: str(int(v)),
+        "targets": ["aim"],
+        "cmd": KF_COAST,
+        "tip": "滑行帧数：目标丢失后继续预测的帧数",
+    },
+    {
+        "key": "krd",
+        "widget": "kalmanReinitDistSlider",
+        "lcd": "kalmanReinitDistSpinBox",
+        "min": 5,
+        "max": 150,
+        "xform": lambda v: v,
+        "fmt": lambda v: str(int(v)),
+        "targets": ["aim"],
+        "cmd": KF_REINIT,
+        "tip": "重初始化距离：新目标与预测位置超过此距离时重新初始化滤波器",
+    },
+    {
+        "key": "hms",
+        "widget": "humanizeMaxSpeedSlider",
+        "lcd": "humanizeMaxSpeedSpinBox",
+        "min": 10,
+        "max": 500,
+        "xform": lambda v: v / 10,
+        "fmt": lambda v: f"{v:.1f}",
+        "targets": ["aim"],
+        "cmd": HM_MAX,
+        "tip": "最大速度：限制每帧瞄准移动的最大像素数，模拟人类反应速度",
+    },
+    {
+        "key": "hmr",
+        "widget": "humanizeReactionDistSlider",
+        "lcd": "humanizeReactionDistSpinBox",
+        "min": 5,
+        "max": 300,
+        "xform": lambda v: v,
+        "fmt": lambda v: str(int(v)),
+        "targets": ["aim"],
+        "cmd": HM_REACT,
+        "tip": "反应距离：目标偏移超过此距离时才开始追踪，模拟人类反应延迟",
+    },
+    {
+        "key": "hma",
+        "widget": "humanizeAlphaSlider",
+        "lcd": "humanizeAlphaSpinBox",
+        "min": 5,
+        "max": 100,
+        "xform": lambda v: v / 100,
+        "fmt": lambda v: f"{v:.2f}",
+        "targets": ["aim"],
+        "cmd": HM_ALPHA,
+        "tip": "平滑权重：追踪时的平滑系数，值越小移动越平滑",
+    },
+    {
+        "key": "hmj",
+        "widget": "humanizeJitterSlider",
+        "lcd": "humanizeJitterSpinBox",
+        "min": 0,
+        "max": 300,
+        "xform": lambda v: v / 100,
+        "fmt": lambda v: f"{v:.2f}",
+        "targets": ["aim"],
+        "cmd": HM_JITTER,
+        "tip": "抖动强度：添加随机微小偏移，使移动轨迹更自然",
+    },
 ]
 
 
@@ -733,13 +890,16 @@ class App:
         self._t0 = time.time()
 
         self._qt = QtWidgets.QApplication(sys.argv)
+        self._qt.setStyleSheet(
+            "QToolTip { color: #e0e0e0; background-color: #2d2d2d; "
+            "border: 1px solid #555; padding: 4px; font-size: 12px; }"
+        )
         self._ui = uic.loadUi(APP_ROOT / "ui" / "VisionAimWindow.ui")
         self._ui.setWindowTitle("VisionAim")
-        self._ui.setFixedSize(772, 390)
+        self._ui.setFixedSize(772, 570)
 
         self._build_sliders()
         self._bind_buttons()
-        self._bind_spinboxes()
         self._sync_video_btn()
 
         self._render_ticker = QTimer()
@@ -749,15 +909,33 @@ class App:
     def _build_sliders(self):
         for d in SLIDER_DEFS:
             w = getattr(self._ui, d["widget"])
-            lcd = getattr(self._ui, d["lcd"])
+            spin = getattr(self._ui, d["lcd"])
             w.setMinimum(d["min"])
             w.setMaximum(d["max"])
             if "step" in d:
                 w.setSingleStep(d["step"])
-            s = LazySlider(w, lcd, d["xform"], d["fmt"])
+            spin.setMinimum(d["xform"](d["min"]))
+            spin.setMaximum(d["xform"](d["max"]))
+            x1 = d["xform"](1)
+            if x1 >= 1.0:
+                spin.setDecimals(0)
+                spin.setSingleStep(1.0)
+            elif x1 >= 0.1:
+                spin.setDecimals(1)
+                spin.setSingleStep(0.1)
+            else:
+                spin.setDecimals(2)
+                spin.setSingleStep(0.01)
+            s = LazySlider(w, spin, d["xform"], d["fmt"])
+            if "tip" in d:
+                w.setToolTip(d["tip"])
+                spin.setToolTip(d["tip"])
             s.bind(
-                lambda _d=d: self._msg.broadcast(
-                    _d["cmd"], self._sliders[_d["key"]].value, *_d["targets"]
+                lambda _d=d: (
+                    self._msg.broadcast(
+                        _d["cmd"], self._sliders[_d["key"]].value, *_d["targets"]
+                    ),
+                    self._save_settings(),
                 )
             )
             self._sliders[d["key"]] = s
@@ -766,24 +944,28 @@ class App:
         ui = self._ui
         ui.OpVideoButton.clicked.connect(self._flip_video)
         ui.OpYoloButton.clicked.connect(self._flip_yolo)
-        ui.saveConfigButton.clicked.connect(self._save_settings)
         ui.chooseModelButton.clicked.connect(self._browse_model)
         ui.triggerMethodComboBox.currentTextChanged.connect(self._change_trigger)
+        ui.triggerMethodComboBox.currentTextChanged.connect(lambda: self._save_settings())
         ui.HotkeyPushButton.clicked.connect(
             lambda: self._rebind_key(ui.HotkeyPushButton.text())
         )
         ui.kalmanFilterCheckBox.stateChanged.connect(
-            lambda: self._msg.broadcast(
-                KF_ON, ui.kalmanFilterCheckBox.isChecked(), "aim"
+            lambda: (
+                self._msg.broadcast(
+                    KF_ON, ui.kalmanFilterCheckBox.isChecked(), "aim"
+                ),
+                self._save_settings(),
             )
         )
-
-    def _bind_spinboxes(self):
-        for attr, cmd, target in SPINBOX_BINDINGS:
-            widget = getattr(self._ui, attr)
-            widget.valueChanged.connect(
-                lambda v, c=cmd, t=target: self._msg.broadcast(c, v, t)
+        ui.humanizeCheckBox.stateChanged.connect(
+            lambda: (
+                self._msg.broadcast(
+                    HM_ON, ui.humanizeCheckBox.isChecked(), "aim"
+                ),
+                self._save_settings(),
             )
+        )
 
     def _change_trigger(self, label):
         self._msg.broadcast(FIRE_MODE_SET, FIRE_MODE.get(label, "press"), "aim")
@@ -794,6 +976,7 @@ class App:
         if vk != "UNKNOWN":
             self._ui.HotkeyPushButton.setText(name)
             self._msg.broadcast(BIND_KEY, vk, "aim")
+            self._save_settings()
 
     def _sync_video_btn(self):
         self._ui.OpVideoButton.setText(
@@ -855,6 +1038,7 @@ class App:
         if path:
             self._ui.modelFileLabel.setText(os.path.basename(path))
             self._model_path = path
+            self._save_settings()
 
     def _save_settings(self):
         Settings.update_many(
@@ -869,14 +1053,18 @@ class App:
                 "activation_button": self._ui.HotkeyPushButton.text(),
                 "fire_mode": self._ui.triggerMethodComboBox.currentText(),
                 "kalman_filter_enabled": self._ui.kalmanFilterCheckBox.isChecked(),
-                "kalman_process_noise": self._ui.kalmanProcessNoiseDoubleSpinBox.value(),
-                "kalman_measurement_noise": self._ui.kalmanMeasurementNoiseDoubleSpinBox.value(),
-                "kalman_coast_max_frames": self._ui.kalmanCoastFramesSpinBox.value(),
-                "kalman_reinit_distance_threshold": self._ui.kalmanReinitDistDoubleSpinBox.value(),
+                "kalman_process_noise": self._sliders["kpn"].value,
+                "kalman_measurement_noise": self._sliders["kmn"].value,
+                "kalman_coast_max_frames": int(self._sliders["kcf"].value),
+                "kalman_reinit_distance_threshold": self._sliders["krd"].value,
+                "humanize_enabled": self._ui.humanizeCheckBox.isChecked(),
+                "humanize_max_speed": self._sliders["hms"].value,
+                "humanize_reaction_dist": self._sliders["hmr"].value,
+                "humanize_alpha": self._sliders["hma"].value,
+                "humanize_jitter": self._sliders["hmj"].value,
             }
         )
-        Log.success("当前配置已保存", tag="Config")
-        self._msg.q("log").put((EVT_UI_LOG, "配置已保存"))
+        Log.debug("配置已自动保存", tag="Config")
 
     def _paint(self):
         fq = self._msg.q("frame")
@@ -934,12 +1122,27 @@ class App:
         self._msg.q("log").put((EVT_UI_LOG, "配置读取成功"))
 
         self._model_path = Settings.get("neural_net_path", "yolov11n.pt")
+        for s in self._sliders.values():
+            s._w.blockSignals(True)
+            s._d.blockSignals(True)
+        self._ui.kalmanFilterCheckBox.blockSignals(True)
+        self._ui.humanizeCheckBox.blockSignals(True)
+        self._ui.triggerMethodComboBox.blockSignals(True)
+
         self._sliders["conf"].set(int(Settings.get("threshold", 0.5) * 100))
-        self._sliders["sx"].set(int(Settings.get("h_sensitivity", 0.5) * 10))
-        self._sliders["sy"].set(int(Settings.get("v_sensitivity", 0.5) * 10))
+        self._sliders["sx"].set(int(Settings.get("h_sensitivity", 0.5) * 100))
+        self._sliders["sy"].set(int(Settings.get("v_sensitivity", 0.5) * 100))
         self._sliders["ar"].set(int(Settings.get("detection_radius", 100)))
         self._sliders["oy"].set(int(Settings.get("v_compensation", 0.3) * 100))
         self._sliders["ox"].set(int((1 - Settings.get("h_compensation", 0)) * 50))
+        self._sliders["kpn"].set(int(Settings.get("kalman_process_noise", 5.0) * 10))
+        self._sliders["kmn"].set(int(Settings.get("kalman_measurement_noise", 2.0) * 10))
+        self._sliders["kcf"].set(int(Settings.get("kalman_coast_max_frames", 5)))
+        self._sliders["krd"].set(int(Settings.get("kalman_reinit_distance_threshold", 40.0)))
+        self._sliders["hms"].set(int(Settings.get("humanize_max_speed", 12.0) * 10))
+        self._sliders["hmr"].set(int(Settings.get("humanize_reaction_dist", 80.0)))
+        self._sliders["hma"].set(int(Settings.get("humanize_alpha", 0.55) * 100))
+        self._sliders["hmj"].set(int(Settings.get("humanize_jitter", 0.4) * 100))
 
         self._msg.broadcast(AIM_TOGGLE, True, "aim")
         self._msg.broadcast(CLS_SET, "0", "yolo")
@@ -960,21 +1163,16 @@ class App:
         self._ui.kalmanFilterCheckBox.setChecked(kf)
         self._msg.broadcast(KF_ON, kf, "aim")
 
-        pn = Settings.get("kalman_process_noise", 5.0)
-        self._ui.kalmanProcessNoiseDoubleSpinBox.setValue(pn)
-        self._msg.broadcast(KF_PN, pn, "aim")
+        hm = Settings.get("humanize_enabled", False)
+        self._ui.humanizeCheckBox.setChecked(hm)
+        self._msg.broadcast(HM_ON, hm, "aim")
 
-        mn = Settings.get("kalman_measurement_noise", 2.0)
-        self._ui.kalmanMeasurementNoiseDoubleSpinBox.setValue(mn)
-        self._msg.broadcast(KF_MN, mn, "aim")
-
-        cf = Settings.get("kalman_coast_max_frames", 5)
-        self._ui.kalmanCoastFramesSpinBox.setValue(cf)
-        self._msg.broadcast(KF_COAST, cf, "aim")
-
-        rd = Settings.get("kalman_reinit_distance_threshold", 40.0)
-        self._ui.kalmanReinitDistDoubleSpinBox.setValue(rd)
-        self._msg.broadcast(KF_REINIT, rd, "aim")
+        for s in self._sliders.values():
+            s._w.blockSignals(False)
+            s._d.blockSignals(False)
+        self._ui.kalmanFilterCheckBox.blockSignals(False)
+        self._ui.humanizeCheckBox.blockSignals(False)
+        self._ui.triggerMethodComboBox.blockSignals(False)
 
     def _watch_status(self):
         t = QTimer(self._ui)
