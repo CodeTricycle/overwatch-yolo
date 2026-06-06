@@ -31,3 +31,6 @@ Thumbs.db
 
 # Runtime output
 *.log
+
+# User config
+settings.json
