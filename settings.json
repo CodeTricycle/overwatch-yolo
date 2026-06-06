@@ -12,8 +12,13 @@
     "yaw_pixel_count": 6550,
     "pitch_pixel_count": 3220,
     "kalman_filter_enabled": false,
-    "kalman_process_noise": 5.0,
-    "kalman_measurement_noise": 2.0,
-    "kalman_coast_max_frames": 5,
-    "kalman_reinit_distance_threshold": 40.0
+    "kalman_process_noise": 49.4,
+    "kalman_measurement_noise": 10.9,
+    "kalman_coast_max_frames": 22,
+    "kalman_reinit_distance_threshold": 40,
+    "humanize_enabled": true,
+    "humanize_max_speed": 12.0,
+    "humanize_reaction_dist": 80,
+    "humanize_alpha": 0.55,
+    "humanize_jitter": 0.4
 }

@@ -8,6 +8,7 @@
 - **GPU 加速推理** — 支持 NVIDIA CUDA 与 AMD ROCm，自动使用 GPU (FP16) 进行推理，低延迟高帧率
 - **辅助瞄准** — 可配置灵敏度、检测半径、偏移补偿，支持按住/切换两种触发模式
 - **卡尔曼滤波** — 可选的卡尔曼滤波器平滑目标轨迹，支持滑行预测与自动重初始化
+- **拟人化移动** — 钟形速度曲线 + EMA 阻尼 + 高斯抖动模拟人手运动，参数全开放
 - **屏幕捕获** — 基于 mss DirectX 后端的高帧率屏幕截取
 - **视频预览** — 独立窗口实时显示检测结果与 FPS
 - **热键绑定** — 支持键盘与鼠标按键自定义绑定
@@ -69,25 +70,30 @@ python main.py
 
 配置文件为 `settings.json`，首次运行自动生成。各参数说明如下：
 
-| 参数 | 类型 | 默认值 | 说明 |
-|------|------|--------|------|
-| `verbosity` | string | `"debug"` | 日志级别 (trace/debug/info/success/warning/error/critical) |
-| `detection_radius` | int | `150` | 检测半径（像素），目标中心距屏幕中心小于此值时触发瞄准 |
-| `threshold` | float | `0.6` | YOLO 置信度阈值 (0.0 ~ 1.0) |
-| `h_sensitivity` | float | `2.0` | 水平灵敏度 |
-| `v_sensitivity` | float | `1.8` | 垂直灵敏度 |
-| `neural_net_path` | string | `"model/ow.pt"` | 模型文件路径 |
-| `activation_button` | string | `"VK_XBUTTON1"` | 激活按键（VK 码名称） |
-| `fire_mode` | string | `"按下"` | 触发模式：`"按下"` (按住激活) / `"切换"` (开关切换) |
-| `v_compensation` | float | `0.75` | 垂直偏移补偿（用于瞄准头部等位置） |
-| `h_compensation` | float | `0.0` | 水平偏移补偿 |
-| `yaw_pixel_count` | int | `6550` | 水平 360° 对应像素数（用于灵敏度换算） |
-| `pitch_pixel_count` | int | `3220` | 垂直 180° 对应像素数（用于灵敏度换算） |
-| `kalman_filter_enabled` | bool | `false` | 是否启用卡尔曼滤波 |
-| `kalman_process_noise` | float | `5.0` | 卡尔曼滤波过程噪声 |
-| `kalman_measurement_noise` | float | `2.0` | 卡尔曼滤波测量噪声 |
-| `kalman_coast_max_frames` | int | `5` | 卡尔曼滤波最大滑行帧数（丢失目标后预测帧数） |
-| `kalman_reinit_distance_threshold` | float | `40.0` | 卡尔曼滤波重初始化距离阈值（像素） |
+| 参数                                 | 类型     | 默认值             | 说明                                                     |
+| ---------------------------------- | ------ | --------------- | ------------------------------------------------------ |
+| `verbosity`                        | string | `"debug"`       | 日志级别 (trace/debug/info/success/warning/error/critical) |
+| `detection_radius`                 | int    | `150`           | 检测半径（像素），目标中心距屏幕中心小于此值时触发瞄准                            |
+| `threshold`                        | float  | `0.6`           | YOLO 置信度阈值 (0.0 \~ 1.0)                                |
+| `h_sensitivity`                    | float  | `2.0`           | 水平灵敏度                                                  |
+| `v_sensitivity`                    | float  | `1.8`           | 垂直灵敏度                                                  |
+| `neural_net_path`                  | string | `"model/ow.pt"` | 模型文件路径                                                 |
+| `activation_button`                | string | `"VK_XBUTTON1"` | 激活按键（VK 码名称）                                           |
+| `fire_mode`                        | string | `"按下"`          | 触发模式：`"按下"` (按住激活) / `"切换"` (开关切换)                     |
+| `v_compensation`                   | float  | `0.75`          | 垂直偏移补偿（用于瞄准头部等位置）                                      |
+| `h_compensation`                   | float  | `0.0`           | 水平偏移补偿                                                 |
+| `yaw_pixel_count`                  | int    | `6550`          | 水平 360° 对应像素数（用于灵敏度换算）                                 |
+| `pitch_pixel_count`                | int    | `3220`          | 垂直 180° 对应像素数（用于灵敏度换算）                                 |
+| `kalman_filter_enabled`            | bool   | `false`         | 是否启用卡尔曼滤波                                              |
+| `kalman_process_noise`             | float  | `5.0`           | 卡尔曼滤波过程噪声                                              |
+| `kalman_measurement_noise`         | float  | `2.0`           | 卡尔曼滤波测量噪声                                              |
+| `kalman_coast_max_frames`          | int    | `5`             | 卡尔曼滤波最大滑行帧数（丢失目标后预测帧数）                                 |
+| `kalman_reinit_distance_threshold` | float  | `40.0`          | 卡尔曼滤波重初始化距离阈值（像素）                                      |
+| `humanize_enabled`                 | bool   | `false`         | 是否启用拟人化鼠标移动（钟形曲线 + EMA + 抖动）                           |
+| `humanize_max_speed`               | float  | `12.0`          | 拟人移动单帧最大像素位移（速度曲线渐近线）                                  |
+| `humanize_reaction_dist`           | float  | `80.0`          | 拟人移动速度饱和距离，越小起步越快                                      |
+| `humanize_alpha`                   | float  | `0.55`          | 拟人移动 EMA 阻尼权重，越小越柔（肌肉惯性）                               |
+| `humanize_jitter`                  | float  | `0.4`           | 拟人移动高斯抖动标准差（像素）                                        |
 
 ## 项目结构
 
@@ -137,17 +143,17 @@ overwatch-yolo/
 
 ## 依赖
 
-| 包 | 用途 |
-|----|------|
-| ultralytics | YOLOv11 推理框架 |
-| opencv-python | 图像处理 |
-| numpy | 数值计算 |
-| PyQt6 | GUI 界面 |
-| mss | DirectX 屏幕捕获 |
-| pywin32 | Win32 API（鼠标移动、按键状态） |
-| pynput | 键盘/鼠标监听（热键捕获） |
-| pyautogui | 获取屏幕分辨率 |
-| colorama | 终端彩色输出 |
+| 包             | 用途                   |
+| ------------- | -------------------- |
+| ultralytics   | YOLOv11 推理框架         |
+| opencv-python | 图像处理                 |
+| numpy         | 数值计算                 |
+| PyQt6         | GUI 界面               |
+| mss           | DirectX 屏幕捕获         |
+| pywin32       | Win32 API（鼠标移动、按键状态） |
+| pynput        | 键盘/鼠标监听（热键捕获）        |
+| pyautogui     | 获取屏幕分辨率              |
+| colorama      | 终端彩色输出               |
 
 ## 许可证
 
