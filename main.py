@@ -361,7 +361,7 @@ class CaptureWorker:
                 self._box.event.set()
                 shm.close()
 
-            cv2.circle(frame, (int(cx), int(cy)), self._aim_range, (173, 216, 230), 1)
+            cv2.circle(frame, (int(cx), int(cy)), int(self._aim_range), (173, 216, 230), 1)
 
             for b in boxes:
                 x1, y1, x2, y2 = b.cpu().numpy()
