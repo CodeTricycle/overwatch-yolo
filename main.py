@@ -9,7 +9,6 @@ from dataclasses import dataclass, field
 from typing import Callable, Optional
 
 import cv2
-import mss
 import numpy as np
 import pyautogui
 import win32api
@@ -66,6 +65,7 @@ from core import input_handler
 from core import hotkey
 from core.kalman import KalmanTracker
 from core.humanize import Humanizer
+from core.dxgi_capture import DXGICapture
 
 Settings.flush()
 
@@ -260,16 +260,11 @@ class CaptureWorker:
             except Exception:
                 break
 
-        with mss.mss(backend="directx") as sct:
-            sw, sh = pyautogui.size()
-            Log.info(f"屏幕分辨率 {sw}×{sh}, 捕获区域 320×320", tag="Capture")
-            region = {
-                "top": (sh - 320) // 2,
-                "left": (sw - 320) // 2,
-                "width": 320,
-                "height": 320,
-            }
+        sw, sh = pyautogui.size()
+        Log.info(f"屏幕分辨率 {sw}×{sh}, 捕获区域 320×320", tag="Capture")
+        region = ((sw - 320) // 2, (sh - 320) // 2, 320, 320)
 
+        with DXGICapture(region) as cap:
             while True:
                 try:
                     if not stop.empty():
@@ -279,11 +274,10 @@ class CaptureWorker:
 
                     self._drain_yolo_queue()
 
-                    shot = sct.grab(region)
-                    frame = np.frombuffer(shot.rgb, dtype=np.uint8).reshape(
-                        (shot.height, shot.width, 3)
-                    )
-                    frame = cv2.cvtColor(frame, cv2.COLOR_BGRA2RGB)
+                    bgra = cap.grab()
+                    if bgra is None:
+                        continue
+                    frame = bgra[..., :3]
 
                     if self._yolo_on and self._model is not None:
                         frame = self._infer(frame)
