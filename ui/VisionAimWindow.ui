@@ -10,7 +10,7 @@
     <x>0</x>
      <y>0</y>
     <width>772</width>
-    <height>390</height>
+    <height>570</height>
    </rect>
   </property>
   <property name="cursor">
@@ -184,7 +184,7 @@
       <enum>Qt::Orientation::Horizontal</enum>
      </property>
     </widget>
-    <widget class="QLCDNumber" name="confNumber">
+    <widget class="QDoubleSpinBox" name="confSpinBox">
      <property name="geometry">
       <rect>
        <x>290</x>
@@ -195,33 +195,27 @@
      </property>
      <property name="font">
       <font>
-       <family>Microsoft YaHei UI</family>
-       <pointsize>12</pointsize>
+       <family>Microsoft YaHei</family>
+       <pointsize>10</pointsize>
       </font>
      </property>
+     <property name="decimals">
+      <number>2</number>
+     </property>
+     <property name="buttonSymbols">
+      <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignmentFlag::AlignCenter</set>
+     </property>
      <property name="styleSheet">
-      <string notr="true"/>
-     </property>
-     <property name="frameShape">
-      <enum>QFrame::Shape::Box</enum>
-     </property>
-     <property name="frameShadow">
-      <enum>QFrame::Shadow::Plain</enum>
-     </property>
-     <property name="lineWidth">
-      <number>1</number>
-     </property>
-     <property name="digitCount">
-      <number>5</number>
-     </property>
-     <property name="segmentStyle">
-      <enum>QLCDNumber::SegmentStyle::Flat</enum>
+      <string notr="true">QDoubleSpinBox { border: 1px solid #ccc; border-radius: 3px; background: #fff; }</string>
      </property>
     </widget>
      <widget class="QPushButton" name="OpVideoButton">
       <property name="geometry">
        <rect>
-        <x>20</x>
+        <x>54</x>
         <y>120</y>
         <width>105</width>
         <height>41</height>
@@ -246,7 +240,7 @@
      <widget class="QPushButton" name="OpYoloButton">
       <property name="geometry">
        <rect>
-        <x>133</x>
+        <x>213</x>
         <y>120</y>
         <width>105</width>
         <height>41</height>
@@ -268,32 +262,8 @@
        <string>开启 YOLO</string>
       </property>
      </widget>
-     <widget class="QPushButton" name="saveConfigButton">
-      <property name="geometry">
-       <rect>
-        <x>246</x>
-        <y>120</y>
-        <width>105</width>
-        <height>41</height>
-       </rect>
-      </property>
-      <property name="font">
-       <font>
-        <family>Microsoft YaHei</family>
-        <pointsize>12</pointsize>
-       </font>
-      </property>
-      <property name="styleSheet">
-       <string notr="true">background-color: rgb(0, 120, 212); color: white; border-radius: 5px;</string>
-      </property>
-      <property name="cursor">
-       <cursorShape>PointingHandCursor</cursorShape>
-      </property>
-      <property name="text">
-       <string>保存配置</string>
-      </property>
-     </widget>
     </widget>
+
    <widget class="QWidget" name="closeMessageWidget" native="true">
     <property name="visible">
      <bool>false</bool>
@@ -379,7 +349,7 @@ border-radius: 20px;      /* 圆形效果，半径设为 QLabel 宽高的一半 
       <x>10</x>
       <y>10</y>
       <width>371</width>
-      <height>375</height>
+      <height>555</height>
      </rect>
     </property>
     <property name="styleSheet">
@@ -420,7 +390,7 @@ border-radius: 20px;      /* 圆形效果，半径设为 QLabel 宽高的一半 
       <x>10</x>
       <y>60</y>
       <width>371</width>
-      <height>305</height>
+      <height>500</height>
      </rect>
     </property>
     <property name="styleSheet">
@@ -438,7 +408,7 @@ border-radius: 20px;      /* 圆形效果，半径设为 QLabel 宽高的一半 
        <x>0</x>
        <y>0</y>
        <width>371</width>
-       <height>295</height>
+       <height>500</height>
       </rect>
      </property>
      <property name="styleSheet">
@@ -594,7 +564,7 @@ border-radius: 20px;      /* 圆形效果，半径设为 QLabel 宽高的一半 
        <enum>Qt::Orientation::Horizontal</enum>
       </property>
      </widget>
-     <widget class="QLCDNumber" name="lockSpeedXLcdNumber">
+     <widget class="QDoubleSpinBox" name="lockSpeedXSpinBox">
       <property name="geometry">
        <rect>
         <x>295</x>
@@ -603,14 +573,17 @@ border-radius: 20px;      /* 圆形效果，半径设为 QLabel 宽高的一半 
         <height>23</height>
        </rect>
       </property>
-      <property name="frameShape">
-       <enum>QFrame::Shape::Box</enum>
+      <property name="decimals">
+       <number>1</number>
       </property>
-      <property name="frameShadow">
-       <enum>QFrame::Shadow::Plain</enum>
+      <property name="buttonSymbols">
+       <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
       </property>
-      <property name="segmentStyle">
-       <enum>QLCDNumber::SegmentStyle::Flat</enum>
+      <property name="alignment">
+       <set>Qt::AlignmentFlag::AlignCenter</set>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QDoubleSpinBox { border: 1px solid #ccc; border-radius: 3px; background: #fff; }</string>
       </property>
      </widget>
      <widget class="QLabel" name="lockSpeedYLabel">
@@ -651,7 +624,7 @@ border-radius: 20px;      /* 圆形效果，半径设为 QLabel 宽高的一半 
        <enum>Qt::Orientation::Horizontal</enum>
       </property>
      </widget>
-     <widget class="QLCDNumber" name="lockSpeedYLcdNumber">
+     <widget class="QDoubleSpinBox" name="lockSpeedYSpinBox">
       <property name="geometry">
        <rect>
         <x>295</x>
@@ -660,14 +633,17 @@ border-radius: 20px;      /* 圆形效果，半径设为 QLabel 宽高的一半 
         <height>23</height>
        </rect>
       </property>
-      <property name="frameShape">
-       <enum>QFrame::Shape::Box</enum>
+      <property name="decimals">
+       <number>1</number>
       </property>
-      <property name="frameShadow">
-       <enum>QFrame::Shadow::Plain</enum>
+      <property name="buttonSymbols">
+       <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
       </property>
-      <property name="segmentStyle">
-       <enum>QLCDNumber::SegmentStyle::Flat</enum>
+      <property name="alignment">
+       <set>Qt::AlignmentFlag::AlignCenter</set>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QDoubleSpinBox { border: 1px solid #ccc; border-radius: 3px; background: #fff; }</string>
       </property>
      </widget>
      <widget class="QLabel" name="aimingRangeLabel">
@@ -708,7 +684,7 @@ border-radius: 20px;      /* 圆形效果，半径设为 QLabel 宽高的一半 
        <enum>Qt::Orientation::Horizontal</enum>
       </property>
      </widget>
-     <widget class="QLCDNumber" name="aimRangeLcdNumber">
+     <widget class="QDoubleSpinBox" name="aimRangeSpinBox">
       <property name="geometry">
        <rect>
         <x>295</x>
@@ -717,14 +693,17 @@ border-radius: 20px;      /* 圆形效果，半径设为 QLabel 宽高的一半 
         <height>23</height>
        </rect>
       </property>
-      <property name="frameShape">
-       <enum>QFrame::Shape::Box</enum>
+      <property name="decimals">
+       <number>1</number>
       </property>
-      <property name="frameShadow">
-       <enum>QFrame::Shadow::Plain</enum>
+      <property name="buttonSymbols">
+       <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
       </property>
-      <property name="segmentStyle">
-       <enum>QLCDNumber::SegmentStyle::Flat</enum>
+      <property name="alignment">
+       <set>Qt::AlignmentFlag::AlignCenter</set>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QDoubleSpinBox { border: 1px solid #ccc; border-radius: 3px; background: #fff; }</string>
       </property>
      </widget>
      <widget class="QLabel" name="aimingRangeLabel_3">
@@ -765,7 +744,7 @@ border-radius: 20px;      /* 圆形效果，半径设为 QLabel 宽高的一半 
        <enum>Qt::Orientation::Horizontal</enum>
       </property>
      </widget>
-     <widget class="QLCDNumber" name="offset_centerxNumber">
+     <widget class="QDoubleSpinBox" name="offset_centerxSpinBox">
       <property name="geometry">
        <rect>
         <x>295</x>
@@ -774,14 +753,17 @@ border-radius: 20px;      /* 圆形效果，半径设为 QLabel 宽高的一半 
         <height>23</height>
        </rect>
       </property>
-      <property name="frameShape">
-       <enum>QFrame::Shape::Box</enum>
+      <property name="decimals">
+       <number>2</number>
       </property>
-      <property name="frameShadow">
-       <enum>QFrame::Shadow::Plain</enum>
+      <property name="buttonSymbols">
+       <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
       </property>
-      <property name="segmentStyle">
-       <enum>QLCDNumber::SegmentStyle::Flat</enum>
+      <property name="alignment">
+       <set>Qt::AlignmentFlag::AlignCenter</set>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QDoubleSpinBox { border: 1px solid #ccc; border-radius: 3px; background: #fff; }</string>
       </property>
      </widget>
      <widget class="QLabel" name="aimingRangeLabel_4">
@@ -822,7 +804,7 @@ border-radius: 20px;      /* 圆形效果，半径设为 QLabel 宽高的一半 
        <enum>Qt::Orientation::Horizontal</enum>
       </property>
      </widget>
-     <widget class="QLCDNumber" name="offset_centeryNumber">
+     <widget class="QDoubleSpinBox" name="offset_centerySpinBox">
       <property name="geometry">
        <rect>
         <x>295</x>
@@ -831,14 +813,17 @@ border-radius: 20px;      /* 圆形效果，半径设为 QLabel 宽高的一半 
         <height>23</height>
        </rect>
       </property>
-      <property name="frameShape">
-       <enum>QFrame::Shape::Box</enum>
+      <property name="decimals">
+       <number>2</number>
       </property>
-      <property name="frameShadow">
-       <enum>QFrame::Shadow::Plain</enum>
+      <property name="buttonSymbols">
+       <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
       </property>
-      <property name="segmentStyle">
-       <enum>QLCDNumber::SegmentStyle::Flat</enum>
+      <property name="alignment">
+       <set>Qt::AlignmentFlag::AlignCenter</set>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QDoubleSpinBox { border: 1px solid #ccc; border-radius: 3px; background: #fff; }</string>
       </property>
      </widget>
      <widget class="QCheckBox" name="kalmanFilterCheckBox">
@@ -856,6 +841,9 @@ border-radius: 20px;      /* 圆形效果，半径设为 QLabel 宽高的一半 
         <pointsize>11</pointsize>
        </font>
       </property>
+      <property name="styleSheet">
+       <string notr="true">QCheckBox::indicator { width: 16px; height: 16px; border: 2px solid #ccc; border-radius: 3px; background: #fff; } QCheckBox::indicator:checked { background: #0078D4; border-color: #0078D4; image: none; } QCheckBox::indicator:unchecked { background: #fff; border-color: #ccc; }</string>
+      </property>
       <property name="toolTip">
        <string>开启后使用卡尔曼滤波平滑坐标并在短暂失检时预测位置</string>
       </property>
@@ -868,29 +856,7 @@ border-radius: 20px;      /* 圆形效果，半径设为 QLabel 宽高的一半 
        <rect>
         <x>10</x>
         <y>240</y>
-        <width>72</width>
-        <height>20</height>
-       </rect>
-      </property>
-      <property name="font">
-       <font>
-        <family>Microsoft YaHei</family>
-        <pointsize>10</pointsize>
-       </font>
-      </property>
-      <property name="toolTip">
-       <string>运动模型不确定性，值越大越跟随原始检测（建议3~12）</string>
-      </property>
-      <property name="text">
-       <string>过程噪声</string>
-      </property>
-     </widget>
-     <widget class="QDoubleSpinBox" name="kalmanProcessNoiseDoubleSpinBox">
-      <property name="geometry">
-       <rect>
-        <x>86</x>
-        <y>238</y>
-        <width>75</width>
+        <width>81</width>
         <height>24</height>
        </rect>
       </property>
@@ -903,47 +869,54 @@ border-radius: 20px;      /* 圆形效果，半径设为 QLabel 宽高的一半 
       <property name="toolTip">
        <string>运动模型不确定性，值越大越跟随原始检测（建议3~12）</string>
       </property>
-      <property name="minimum">
-       <double>0.100000000000000</double>
+      <property name="text">
+       <string>过程噪声:</string>
       </property>
-      <property name="maximum">
-       <double>50.000000000000000</double>
+     </widget>
+     <widget class="QSlider" name="kalmanProcessNoiseSlider">
+      <property name="geometry">
+       <rect>
+        <x>100</x>
+        <y>243</y>
+        <width>191</width>
+        <height>18</height>
+       </rect>
       </property>
-      <property name="singleStep">
-       <double>0.500000000000000</double>
+      <property name="toolTip">
+       <string>运动模型不确定性，值越大越跟随原始检测（建议3~12）</string>
       </property>
-      <property name="value">
-       <double>5.000000000000000</double>
+      <property name="orientation">
+       <enum>Qt::Orientation::Horizontal</enum>
+      </property>
+     </widget>
+     <widget class="QDoubleSpinBox" name="kalmanProcessNoiseSpinBox">
+      <property name="geometry">
+       <rect>
+        <x>295</x>
+        <y>241</y>
+        <width>64</width>
+        <height>23</height>
+       </rect>
+      </property>
+      <property name="decimals">
+       <number>1</number>
+      </property>
+      <property name="buttonSymbols">
+       <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignmentFlag::AlignCenter</set>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QDoubleSpinBox { border: 1px solid #ccc; border-radius: 3px; background: #fff; }</string>
       </property>
      </widget>
      <widget class="QLabel" name="kalmanMeasurementNoiseLabel">
       <property name="geometry">
        <rect>
-        <x>175</x>
-        <y>240</y>
-        <width>72</width>
-        <height>20</height>
-       </rect>
-      </property>
-      <property name="font">
-       <font>
-        <family>Microsoft YaHei</family>
-        <pointsize>10</pointsize>
-       </font>
-      </property>
-      <property name="toolTip">
-       <string>检测坐标抖动程度，值越小越信任检测（建议1~5）</string>
-      </property>
-      <property name="text">
-       <string>测量噪声</string>
-      </property>
-     </widget>
-     <widget class="QDoubleSpinBox" name="kalmanMeasurementNoiseDoubleSpinBox">
-      <property name="geometry">
-       <rect>
-        <x>251</x>
-        <y>238</y>
-        <width>75</width>
+        <x>10</x>
+        <y>270</y>
+        <width>81</width>
         <height>24</height>
        </rect>
       </property>
@@ -956,47 +929,54 @@ border-radius: 20px;      /* 圆形效果，半径设为 QLabel 宽高的一半 
       <property name="toolTip">
        <string>检测坐标抖动程度，值越小越信任检测（建议1~5）</string>
       </property>
-      <property name="minimum">
-       <double>0.100000000000000</double>
+      <property name="text">
+       <string>测量噪声:</string>
       </property>
-      <property name="maximum">
-       <double>20.000000000000000</double>
+     </widget>
+     <widget class="QSlider" name="kalmanMeasurementNoiseSlider">
+      <property name="geometry">
+       <rect>
+        <x>100</x>
+        <y>273</y>
+        <width>191</width>
+        <height>18</height>
+       </rect>
       </property>
-      <property name="singleStep">
-       <double>0.500000000000000</double>
+      <property name="toolTip">
+       <string>检测坐标抖动程度，值越小越信任检测（建议1~5）</string>
       </property>
-      <property name="value">
-       <double>2.000000000000000</double>
+      <property name="orientation">
+       <enum>Qt::Orientation::Horizontal</enum>
+      </property>
+     </widget>
+     <widget class="QDoubleSpinBox" name="kalmanMeasurementNoiseSpinBox">
+      <property name="geometry">
+       <rect>
+        <x>295</x>
+        <y>271</y>
+        <width>64</width>
+        <height>23</height>
+       </rect>
+      </property>
+      <property name="decimals">
+       <number>1</number>
+      </property>
+      <property name="buttonSymbols">
+       <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignmentFlag::AlignCenter</set>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QDoubleSpinBox { border: 1px solid #ccc; border-radius: 3px; background: #fff; }</string>
       </property>
      </widget>
      <widget class="QLabel" name="kalmanCoastFramesLabel">
       <property name="geometry">
        <rect>
         <x>10</x>
-        <y>268</y>
-        <width>72</width>
-        <height>20</height>
-       </rect>
-      </property>
-      <property name="font">
-       <font>
-        <family>Microsoft YaHei</family>
-        <pointsize>10</pointsize>
-       </font>
-      </property>
-      <property name="toolTip">
-       <string>失检后最多预测多少帧（建议3~10）</string>
-      </property>
-      <property name="text">
-       <string>预测帧数</string>
-      </property>
-     </widget>
-     <widget class="QSpinBox" name="kalmanCoastFramesSpinBox">
-      <property name="geometry">
-       <rect>
-        <x>86</x>
-        <y>266</y>
-        <width>75</width>
+        <y>300</y>
+        <width>81</width>
         <height>24</height>
        </rect>
       </property>
@@ -1009,44 +989,54 @@ border-radius: 20px;      /* 圆形效果，半径设为 QLabel 宽高的一半 
       <property name="toolTip">
        <string>失检后最多预测多少帧（建议3~10）</string>
       </property>
-      <property name="minimum">
-       <number>1</number>
+      <property name="text">
+       <string>预测帧数:</string>
       </property>
-      <property name="maximum">
-       <number>30</number>
+     </widget>
+     <widget class="QSlider" name="kalmanCoastFramesSlider">
+      <property name="geometry">
+       <rect>
+        <x>100</x>
+        <y>303</y>
+        <width>191</width>
+        <height>18</height>
+       </rect>
       </property>
-      <property name="value">
-       <number>5</number>
+      <property name="toolTip">
+       <string>失检后最多预测多少帧（建议3~10）</string>
+      </property>
+      <property name="orientation">
+       <enum>Qt::Orientation::Horizontal</enum>
+      </property>
+     </widget>
+     <widget class="QDoubleSpinBox" name="kalmanCoastFramesSpinBox">
+      <property name="geometry">
+       <rect>
+        <x>295</x>
+        <y>301</y>
+        <width>64</width>
+        <height>23</height>
+       </rect>
+      </property>
+      <property name="decimals">
+       <number>0</number>
+      </property>
+      <property name="buttonSymbols">
+       <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignmentFlag::AlignCenter</set>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QDoubleSpinBox { border: 1px solid #ccc; border-radius: 3px; background: #fff; }</string>
       </property>
      </widget>
      <widget class="QLabel" name="kalmanReinitDistLabel">
       <property name="geometry">
        <rect>
-        <x>175</x>
-        <y>268</y>
-        <width>72</width>
-        <height>20</height>
-       </rect>
-      </property>
-      <property name="font">
-       <font>
-        <family>Microsoft YaHei</family>
-        <pointsize>10</pointsize>
-       </font>
-      </property>
-      <property name="toolTip">
-       <string>目标跳变超过此像素距离时重置滤波器（建议20~60）</string>
-      </property>
-      <property name="text">
-       <string>重置距离</string>
-      </property>
-     </widget>
-     <widget class="QDoubleSpinBox" name="kalmanReinitDistDoubleSpinBox">
-      <property name="geometry">
-       <rect>
-        <x>251</x>
-        <y>266</y>
-        <width>75</width>
+        <x>10</x>
+        <y>330</y>
+        <width>81</width>
         <height>24</height>
        </rect>
       </property>
@@ -1059,17 +1049,311 @@ border-radius: 20px;      /* 圆形效果，半径设为 QLabel 宽高的一半 
       <property name="toolTip">
        <string>目标跳变超过此像素距离时重置滤波器（建议20~60）</string>
       </property>
-      <property name="minimum">
-       <double>5.000000000000000</double>
+      <property name="text">
+       <string>重置距离:</string>
       </property>
-      <property name="maximum">
-       <double>150.000000000000000</double>
+     </widget>
+     <widget class="QSlider" name="kalmanReinitDistSlider">
+      <property name="geometry">
+       <rect>
+        <x>100</x>
+        <y>333</y>
+        <width>191</width>
+        <height>18</height>
+       </rect>
       </property>
-      <property name="singleStep">
-       <double>1.000000000000000</double>
+      <property name="toolTip">
+       <string>目标跳变超过此像素距离时重置滤波器（建议20~60）</string>
       </property>
-      <property name="value">
-       <double>40.000000000000000</double>
+      <property name="orientation">
+       <enum>Qt::Orientation::Horizontal</enum>
+      </property>
+     </widget>
+     <widget class="QDoubleSpinBox" name="kalmanReinitDistSpinBox">
+      <property name="geometry">
+       <rect>
+        <x>295</x>
+        <y>331</y>
+        <width>64</width>
+        <height>23</height>
+       </rect>
+      </property>
+      <property name="decimals">
+       <number>0</number>
+      </property>
+      <property name="buttonSymbols">
+       <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignmentFlag::AlignCenter</set>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QDoubleSpinBox { border: 1px solid #ccc; border-radius: 3px; background: #fff; }</string>
+      </property>
+     </widget>
+     <widget class="QCheckBox" name="humanizeCheckBox">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>360</y>
+        <width>120</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <family>Microsoft YaHei</family>
+        <pointsize>11</pointsize>
+       </font>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QCheckBox::indicator { width: 16px; height: 16px; border: 2px solid #ccc; border-radius: 3px; background: #fff; } QCheckBox::indicator:checked { background: #0078D4; border-color: #0078D4; image: none; } QCheckBox::indicator:unchecked { background: #fff; border-color: #ccc; }</string>
+      </property>
+      <property name="toolTip">
+       <string>开启后以钟形速度曲线、EMA 阻尼与高斯微抖动模拟人手鼠标移动</string>
+      </property>
+      <property name="text">
+       <string>拟人移动</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="humanizeMaxSpeedLabel">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>386</y>
+        <width>81</width>
+        <height>24</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <family>Microsoft YaHei</family>
+        <pointsize>10</pointsize>
+       </font>
+      </property>
+      <property name="toolTip">
+       <string>单帧最大像素位移（钟形曲线渐近线，建议 8~25）</string>
+      </property>
+      <property name="text">
+       <string>最大速度:</string>
+      </property>
+     </widget>
+     <widget class="QSlider" name="humanizeMaxSpeedSlider">
+      <property name="geometry">
+       <rect>
+        <x>100</x>
+        <y>389</y>
+        <width>191</width>
+        <height>18</height>
+       </rect>
+      </property>
+      <property name="toolTip">
+       <string>单帧最大像素位移（钟形曲线渐近线，建议 8~25）</string>
+      </property>
+      <property name="orientation">
+       <enum>Qt::Orientation::Horizontal</enum>
+      </property>
+     </widget>
+     <widget class="QDoubleSpinBox" name="humanizeMaxSpeedSpinBox">
+      <property name="geometry">
+       <rect>
+        <x>295</x>
+        <y>387</y>
+        <width>64</width>
+        <height>23</height>
+       </rect>
+      </property>
+      <property name="decimals">
+       <number>1</number>
+      </property>
+      <property name="buttonSymbols">
+       <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignmentFlag::AlignCenter</set>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QDoubleSpinBox { border: 1px solid #ccc; border-radius: 3px; background: #fff; }</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="humanizeReactionDistLabel">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>416</y>
+        <width>81</width>
+        <height>24</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <family>Microsoft YaHei</family>
+        <pointsize>10</pointsize>
+       </font>
+      </property>
+      <property name="toolTip">
+       <string>速度饱和距离，越小起步越快（建议 40~150）</string>
+      </property>
+      <property name="text">
+       <string>反应距离:</string>
+      </property>
+     </widget>
+     <widget class="QSlider" name="humanizeReactionDistSlider">
+      <property name="geometry">
+       <rect>
+        <x>100</x>
+        <y>419</y>
+        <width>191</width>
+        <height>18</height>
+       </rect>
+      </property>
+      <property name="toolTip">
+       <string>速度饱和距离，越小起步越快（建议 40~150）</string>
+      </property>
+      <property name="orientation">
+       <enum>Qt::Orientation::Horizontal</enum>
+      </property>
+     </widget>
+     <widget class="QDoubleSpinBox" name="humanizeReactionDistSpinBox">
+      <property name="geometry">
+       <rect>
+        <x>295</x>
+        <y>417</y>
+        <width>64</width>
+        <height>23</height>
+       </rect>
+      </property>
+      <property name="decimals">
+       <number>0</number>
+      </property>
+      <property name="buttonSymbols">
+       <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignmentFlag::AlignCenter</set>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QDoubleSpinBox { border: 1px solid #ccc; border-radius: 3px; background: #fff; }</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="humanizeAlphaLabel">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>446</y>
+        <width>81</width>
+        <height>24</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <family>Microsoft YaHei</family>
+        <pointsize>10</pointsize>
+       </font>
+      </property>
+      <property name="toolTip">
+       <string>EMA 权重，越小越柔（肌肉惯性，建议 0.3~0.8）</string>
+      </property>
+      <property name="text">
+       <string>平滑权重:</string>
+      </property>
+     </widget>
+     <widget class="QSlider" name="humanizeAlphaSlider">
+      <property name="geometry">
+       <rect>
+        <x>100</x>
+        <y>449</y>
+        <width>191</width>
+        <height>18</height>
+       </rect>
+      </property>
+      <property name="toolTip">
+       <string>EMA 权重，越小越柔（肌肉惯性，建议 0.3~0.8）</string>
+      </property>
+      <property name="orientation">
+       <enum>Qt::Orientation::Horizontal</enum>
+      </property>
+     </widget>
+     <widget class="QDoubleSpinBox" name="humanizeAlphaSpinBox">
+      <property name="geometry">
+       <rect>
+        <x>295</x>
+        <y>447</y>
+        <width>64</width>
+        <height>23</height>
+       </rect>
+      </property>
+      <property name="decimals">
+       <number>2</number>
+      </property>
+      <property name="buttonSymbols">
+       <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignmentFlag::AlignCenter</set>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QDoubleSpinBox { border: 1px solid #ccc; border-radius: 3px; background: #fff; }</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="humanizeJitterLabel">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>476</y>
+        <width>81</width>
+        <height>24</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <family>Microsoft YaHei</family>
+        <pointsize>10</pointsize>
+       </font>
+      </property>
+      <property name="toolTip">
+       <string>高斯抖动标准差（手部不稳，建议 0.2~1.0）</string>
+      </property>
+      <property name="text">
+       <string>抖动强度:</string>
+      </property>
+     </widget>
+     <widget class="QSlider" name="humanizeJitterSlider">
+      <property name="geometry">
+       <rect>
+        <x>100</x>
+        <y>479</y>
+        <width>191</width>
+        <height>18</height>
+       </rect>
+      </property>
+      <property name="toolTip">
+       <string>高斯抖动标准差（手部不稳，建议 0.2~1.0）</string>
+      </property>
+      <property name="orientation">
+       <enum>Qt::Orientation::Horizontal</enum>
+      </property>
+     </widget>
+     <widget class="QDoubleSpinBox" name="humanizeJitterSpinBox">
+      <property name="geometry">
+       <rect>
+        <x>295</x>
+        <y>477</y>
+        <width>64</width>
+        <height>23</height>
+       </rect>
+      </property>
+      <property name="decimals">
+       <number>2</number>
+      </property>
+      <property name="buttonSymbols">
+       <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignmentFlag::AlignCenter</set>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QDoubleSpinBox { border: 1px solid #ccc; border-radius: 3px; background: #fff; }</string>
       </property>
      </widget>
     </widget>
