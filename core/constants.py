@@ -31,6 +31,12 @@ KF_MN = "kalman_measurement_noise"
 KF_COAST = "kalman_coast_max_frames"
 KF_REINIT = "kalman_reinit_distance_threshold"
 
+HM_ON = "humanize_enabled"
+HM_MAX = "humanize_max_speed"
+HM_REACT = "humanize_reaction_dist"
+HM_ALPHA = "humanize_alpha"
+HM_JITTER = "humanize_jitter"
+
 EVT_READY = "loading_complete"
 EVT_LOG = "log_output_main"
 EVT_ERR = "error_log"
