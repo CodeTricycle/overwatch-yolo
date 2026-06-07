@@ -425,6 +425,9 @@ class AimWorker:
         try:
             while True:
                 self._poll_commands()
+                if not self._box.event.wait(timeout=0.005):
+                    continue
+                self._box.event.clear()
                 with self._box.lock:
                     snap = buf.copy()
                 x1, y1, x2, y2, dist, uid = snap[0]

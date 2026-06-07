@@ -191,6 +191,49 @@ class DXGICapture:
         self._device = device.value
         self._ctx = ctx.value
 
+        self._cap_x, self._cap_y, self._cap_w, self._cap_h = self._region
+        self._create_dup()
+
+        td = D3D11_TEXTURE2D_DESC(
+            Width=self._cap_w, Height=self._cap_h,
+            MipLevels=1, ArraySize=1, Format=DXGI_FORMAT_B8G8R8A8_UNORM,
+            SampleDesc_Count=1, SampleDesc_Quality=0,
+            Usage=D3D11_USAGE_STAGING, BindFlags=0,
+            CPUAccessFlags=D3D11_CPU_ACCESS_READ, MiscFlags=0,
+        )
+        staging = c_void_p()
+        hr = _vcall(
+            self._device, 5, HRESULT,
+            POINTER(D3D11_TEXTURE2D_DESC), c_void_p, POINTER(c_void_p),
+        )(self._device, byref(td), None, byref(staging))
+        if hr != S_OK:
+            raise OSError(f"CreateTexture2D failed: 0x{hr & 0xFFFFFFFF:08X}")
+        self._staging = staging.value
+
+        self._fn_copy = _vcall(
+            self._ctx, 46, None,
+            c_void_p, c_uint, c_uint, c_uint, c_uint,
+            c_void_p, c_uint, POINTER(D3D11_BOX),
+        )
+        self._fn_map = _vcall(
+            self._ctx, 14, HRESULT,
+            c_void_p, c_uint, c_uint, c_uint, POINTER(D3D11_MAPPED_SUBRESOURCE),
+        )
+        self._fn_unmap = _vcall(self._ctx, 15, None, c_void_p, c_uint)
+
+        self._box.left = self._cap_x
+        self._box.top = self._cap_y
+        self._box.front = 0
+        self._box.right = self._cap_x + self._cap_w
+        self._box.bottom = self._cap_y + self._cap_h
+        self._box.back = 1
+
+    def _create_dup(self):
+        """创建/重建 IDXGIOutputDuplication（ACCESS_LOST 后调用）。"""
+        if self._dup:
+            _release(self._dup)
+            self._dup = None
+
         dxgi_dev = _qi(self._device, IID_IDXGIDevice)
         try:
             adapter = c_void_p()
@@ -245,46 +288,11 @@ class DXGICapture:
         finally:
             _release(dxgi_dev)
 
-        self._cap_x, self._cap_y, self._cap_w, self._cap_h = self._region
-
-        td = D3D11_TEXTURE2D_DESC(
-            Width=self._cap_w, Height=self._cap_h,
-            MipLevels=1, ArraySize=1, Format=DXGI_FORMAT_B8G8R8A8_UNORM,
-            SampleDesc_Count=1, SampleDesc_Quality=0,
-            Usage=D3D11_USAGE_STAGING, BindFlags=0,
-            CPUAccessFlags=D3D11_CPU_ACCESS_READ, MiscFlags=0,
-        )
-        staging = c_void_p()
-        hr = _vcall(
-            self._device, 5, HRESULT,
-            POINTER(D3D11_TEXTURE2D_DESC), c_void_p, POINTER(c_void_p),
-        )(self._device, byref(td), None, byref(staging))
-        if hr != S_OK:
-            raise OSError(f"CreateTexture2D failed: 0x{hr & 0xFFFFFFFF:08X}")
-        self._staging = staging.value
-
         self._fn_acquire = _vcall(
             self._dup, 8, HRESULT,
             c_uint, POINTER(DXGI_OUTDUPL_FRAME_INFO), POINTER(c_void_p),
         )
         self._fn_release_frame = _vcall(self._dup, 14, HRESULT)
-        self._fn_copy = _vcall(
-            self._ctx, 46, None,
-            c_void_p, c_uint, c_uint, c_uint, c_uint,
-            c_void_p, c_uint, POINTER(D3D11_BOX),
-        )
-        self._fn_map = _vcall(
-            self._ctx, 14, HRESULT,
-            c_void_p, c_uint, c_uint, c_uint, POINTER(D3D11_MAPPED_SUBRESOURCE),
-        )
-        self._fn_unmap = _vcall(self._ctx, 15, None, c_void_p, c_uint)
-
-        self._box.left = self._cap_x
-        self._box.top = self._cap_y
-        self._box.front = 0
-        self._box.right = self._cap_x + self._cap_w
-        self._box.bottom = self._cap_y + self._cap_h
-        self._box.back = 1
 
     def grab(self, timeout_ms=500):
         """获取一帧。返回 (H, W, 4) BGRA np.ndarray；超时返回 None。"""
@@ -293,6 +301,9 @@ class DXGICapture:
             self._dup, timeout_ms, byref(self._frame_info), byref(self._res_ptr)
         )
         if hr == DXGI_ERROR_WAIT_TIMEOUT:
+            return None
+        if hr == DXGI_ERROR_ACCESS_LOST:
+            self._create_dup()
             return None
         if hr != S_OK:
             raise OSError(f"AcquireNextFrame failed: 0x{hr & 0xFFFFFFFF:08X}")
