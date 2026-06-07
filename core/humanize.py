@@ -47,7 +47,7 @@ class Humanizer:
         out_x = self._alpha * target_x + (1.0 - self._alpha) * self._prev_x
         out_y = self._alpha * target_y + (1.0 - self._alpha) * self._prev_y
 
-        if self._jitter > 0.0:
+        if self._jitter > 0.0 and speed > self._jitter:
             out_x += random.gauss(0.0, self._jitter)
             out_y += random.gauss(0.0, self._jitter)
 
