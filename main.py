@@ -68,6 +68,7 @@ from core import hotkey
 from core.kalman import KalmanTracker
 from core.humanize import Humanizer
 import mss
+from core.dxgi_capture import DXGICapture
 
 Settings.flush()
 
@@ -269,42 +270,71 @@ class CaptureWorker:
         Log.info(f"屏幕分辨率 {sw}×{sh}, 捕获区域 320×320", tag="Capture")
         region = ((sw - 320) // 2, (sh - 320) // 2, 320, 320)
 
+        capture_method = Settings.get("capture_method", "mss")
+        Log.info(f"截图方式: {capture_method}", tag="Capture")
+
         self._shm = shared_memory.SharedMemory(name=self._box.name)
         self._shm_arr = np.ndarray((1, 6), dtype=np.float32, buffer=self._shm.buf)
         try:
-            with mss.mss() as sct:
-                mon = {"left": region[0], "top": region[1],
-                       "width": region[2], "height": region[3]}
-                while True:
-                    try:
-                        if not stop.empty():
-                            c, _ = stop.get()
-                            if c in (V_OFF, MDL_SWAP):
-                                break
-
-                        self._drain_yolo_queue()
-
-                        raw = sct.grab(mon)
-                        bgra = np.frombuffer(raw.raw, dtype=np.uint8).reshape(
-                            raw.height, raw.width, 4
-                        )
-                        frame = bgra[..., :3]
-
-                        if self._yolo_on and self._model is not None:
-                            frame = self._infer(frame)
-
-                        try:
-                            self._msg.q("frame").put_nowait(frame)
-                        except queue.Full:
-                            pass
-                    except Exception as e:
-                        Log.warn(f"捕获流中断: {e}", tag="Capture")
-                        self._msg.q("log").put((EVT_ERR, str(e)))
-                        break
+            if capture_method == "dxgi":
+                self._stream_loop_dxgi(stop, region)
+            else:
+                self._stream_loop_mss(stop, region)
         finally:
             self._shm.close()
             self._shm = None
             self._shm_arr = None
+
+    def _stream_loop_mss(self, stop, region):
+        mon = {"left": region[0], "top": region[1],
+               "width": region[2], "height": region[3]}
+        with mss.mss() as sct:
+            while True:
+                try:
+                    if not stop.empty():
+                        c, _ = stop.get()
+                        if c in (V_OFF, MDL_SWAP):
+                            break
+                    self._drain_yolo_queue()
+                    raw = sct.grab(mon)
+                    bgra = np.frombuffer(raw.raw, dtype=np.uint8).reshape(
+                        raw.height, raw.width, 4
+                    )
+                    frame = bgra[..., :3]
+                    if self._yolo_on and self._model is not None:
+                        frame = self._infer(frame)
+                    try:
+                        self._msg.q("frame").put_nowait(frame)
+                    except queue.Full:
+                        pass
+                except Exception as e:
+                    Log.warn(f"捕获流中断: {e}", tag="Capture")
+                    self._msg.q("log").put((EVT_ERR, str(e)))
+                    break
+
+    def _stream_loop_dxgi(self, stop, region):
+        with DXGICapture(region) as cap:
+            while True:
+                try:
+                    if not stop.empty():
+                        c, _ = stop.get()
+                        if c in (V_OFF, MDL_SWAP):
+                            break
+                    self._drain_yolo_queue()
+                    bgra = cap.grab()
+                    if bgra is None:
+                        continue
+                    frame = bgra[..., :3]
+                    if self._yolo_on and self._model is not None:
+                        frame = self._infer(frame)
+                    try:
+                        self._msg.q("frame").put_nowait(frame)
+                    except queue.Full:
+                        pass
+                except Exception as e:
+                    Log.warn(f"捕获流中断: {e}", tag="Capture")
+                    self._msg.q("log").put((EVT_ERR, str(e)))
+                    break
 
     def _drain_yolo_queue(self):
         yq = self._msg.q("yolo")
@@ -896,7 +926,7 @@ class App:
         )
         self._ui = uic.loadUi(APP_ROOT / "ui" / "VisionAimWindow.ui")
         self._ui.setWindowTitle("VisionAim")
-        self._ui.setFixedSize(772, 570)
+        self._ui.setFixedSize(772, 598)
 
         self._build_sliders()
         self._bind_buttons()
@@ -957,6 +987,7 @@ class App:
                 HM_ON, ui.humanizeCheckBox.isChecked(), "aim"
             )
         )
+        ui.captureMethodComboBox.currentTextChanged.connect(self._on_capture_method_changed)
         ui.profileComboBox.currentTextChanged.connect(self._on_profile_changed)
         ui.newProfileButton.clicked.connect(self._new_profile)
         ui.renameProfileButton.clicked.connect(self._rename_profile)
@@ -1107,6 +1138,10 @@ class App:
         )
         self._popup.screen.setPixmap(px)
 
+    def _on_capture_method_changed(self, method: str):
+        if method:
+            Settings.set("capture_method", method)
+
     def _load_profile_list(self):
         cb = self._ui.profileComboBox
         cb.blockSignals(True)
@@ -1163,6 +1198,11 @@ class App:
         self._msg.q("log").put((EVT_UI_LOG, "配置读取成功"))
 
         self._model_path = Settings.get("neural_net_path", "yolov11n.pt")
+
+        cm = Settings.get("capture_method", "mss")
+        self._ui.captureMethodComboBox.blockSignals(True)
+        self._ui.captureMethodComboBox.setCurrentText(cm)
+        self._ui.captureMethodComboBox.blockSignals(False)
 
         self._sliders["conf"].set(int(Settings.get("threshold", 0.5) * 100))
         self._sliders["sx"].set(int(Settings.get("h_sensitivity", 0.5) * 100))

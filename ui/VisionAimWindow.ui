@@ -10,7 +10,7 @@
     <x>0</x>
      <y>0</y>
     <width>772</width>
-    <height>570</height>
+    <height>598</height>
    </rect>
   </property>
   <property name="cursor">
@@ -377,7 +377,7 @@ border-radius: 20px;      /* 圆形效果，半径设为 QLabel 宽高的一半 
       <x>10</x>
       <y>10</y>
       <width>371</width>
-      <height>555</height>
+      <height>583</height>
      </rect>
     </property>
     <property name="styleSheet">
@@ -418,7 +418,7 @@ border-radius: 20px;      /* 圆形效果，半径设为 QLabel 宽高的一半 
       <x>10</x>
       <y>60</y>
       <width>371</width>
-      <height>500</height>
+      <height>528</height>
      </rect>
     </property>
     <property name="styleSheet">
@@ -434,7 +434,7 @@ border-radius: 20px;      /* 圆形效果，半径设为 QLabel 宽高的一半 
      <property name="geometry">
       <rect>
        <x>0</x>
-       <y>0</y>
+       <y>28</y>
        <width>371</width>
        <height>500</height>
       </rect>
@@ -451,11 +451,66 @@ border-radius: 20px;      /* 圆形效果，半径设为 QLabel 宽高的一半 
      <property name="lineWidth">
       <number>0</number>
      </property>
-     <widget class="QLabel" name="triggerMethodLabel">
+     <widget class="QLabel" name="captureMethodLabel">
       <property name="geometry">
        <rect>
         <x>10</x>
         <y>5</y>
+        <width>81</width>
+        <height>24</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <family>Microsoft YaHei</family>
+        <pointsize>11</pointsize>
+       </font>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">background-color: rgba(0, 0, 0, 0);</string>
+      </property>
+      <property name="text">
+       <string>截图方式:</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignVCenter</set>
+      </property>
+     </widget>
+     <widget class="QComboBox" name="captureMethodComboBox">
+      <property name="geometry">
+       <rect>
+        <x>100</x>
+        <y>5</y>
+        <width>111</width>
+        <height>24</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <family>Microsoft YaHei</family>
+        <pointsize>10</pointsize>
+        <bold>false</bold>
+       </font>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">background-color: rgb(240, 240, 240);</string>
+      </property>
+      <item>
+       <property name="text">
+        <string>mss</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>dxgi</string>
+       </property>
+      </item>
+     </widget>
+     <widget class="QLabel" name="triggerMethodLabel">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>33</y>
         <width>81</width>
         <height>24</height>
        </rect>
@@ -480,7 +535,7 @@ border-radius: 20px;      /* 圆形效果，半径设为 QLabel 宽高的一半 
       <property name="geometry">
        <rect>
         <x>100</x>
-        <y>5</y>
+        <y>33</y>
         <width>111</width>
         <height>24</height>
        </rect>
@@ -510,7 +565,7 @@ border-radius: 20px;      /* 圆形效果，半径设为 QLabel 宽高的一半 
       <property name="geometry">
        <rect>
         <x>10</x>
-        <y>35</y>
+        <y>63</y>
         <width>81</width>
         <height>24</height>
        </rect>
@@ -535,7 +590,7 @@ border-radius: 20px;      /* 圆形效果，半径设为 QLabel 宽高的一半 
       <property name="geometry">
        <rect>
         <x>100</x>
-        <y>35</y>
+        <y>63</y>
         <width>111</width>
         <height>24</height>
        </rect>
@@ -558,7 +613,7 @@ border-radius: 20px;      /* 圆形效果，半径设为 QLabel 宽高的一半 
       <property name="geometry">
        <rect>
         <x>10</x>
-        <y>65</y>
+        <y>93</y>
         <width>81</width>
         <height>24</height>
        </rect>
@@ -583,7 +638,7 @@ border-radius: 20px;      /* 圆形效果，半径设为 QLabel 宽高的一半 
       <property name="geometry">
        <rect>
         <x>100</x>
-        <y>68</y>
+        <y>96</y>
         <width>191</width>
         <height>18</height>
        </rect>
@@ -596,7 +651,7 @@ border-radius: 20px;      /* 圆形效果，半径设为 QLabel 宽高的一半 
       <property name="geometry">
        <rect>
         <x>295</x>
-        <y>66</y>
+        <y>94</y>
         <width>64</width>
         <height>23</height>
        </rect>
@@ -618,7 +673,7 @@ border-radius: 20px;      /* 圆形效果，半径设为 QLabel 宽高的一半 
       <property name="geometry">
        <rect>
         <x>10</x>
-        <y>95</y>
+        <y>123</y>
         <width>81</width>
         <height>24</height>
        </rect>
@@ -643,7 +698,7 @@ border-radius: 20px;      /* 圆形效果，半径设为 QLabel 宽高的一半 
       <property name="geometry">
        <rect>
         <x>100</x>
-        <y>98</y>
+        <y>126</y>
         <width>191</width>
         <height>18</height>
        </rect>
@@ -656,7 +711,7 @@ border-radius: 20px;      /* 圆形效果，半径设为 QLabel 宽高的一半 
       <property name="geometry">
        <rect>
         <x>295</x>
-        <y>96</y>
+        <y>124</y>
         <width>64</width>
         <height>23</height>
        </rect>
@@ -678,7 +733,7 @@ border-radius: 20px;      /* 圆形效果，半径设为 QLabel 宽高的一半 
       <property name="geometry">
        <rect>
         <x>10</x>
-        <y>125</y>
+        <y>153</y>
         <width>81</width>
         <height>24</height>
        </rect>
@@ -703,7 +758,7 @@ border-radius: 20px;      /* 圆形效果，半径设为 QLabel 宽高的一半 
       <property name="geometry">
        <rect>
         <x>100</x>
-        <y>128</y>
+        <y>156</y>
         <width>191</width>
         <height>18</height>
        </rect>
@@ -716,7 +771,7 @@ border-radius: 20px;      /* 圆形效果，半径设为 QLabel 宽高的一半 
       <property name="geometry">
        <rect>
         <x>295</x>
-        <y>126</y>
+        <y>154</y>
         <width>64</width>
         <height>23</height>
        </rect>
@@ -738,7 +793,7 @@ border-radius: 20px;      /* 圆形效果，半径设为 QLabel 宽高的一半 
       <property name="geometry">
        <rect>
         <x>10</x>
-        <y>155</y>
+        <y>183</y>
         <width>81</width>
         <height>24</height>
        </rect>
@@ -763,7 +818,7 @@ border-radius: 20px;      /* 圆形效果，半径设为 QLabel 宽高的一半 
       <property name="geometry">
        <rect>
         <x>100</x>
-        <y>158</y>
+        <y>186</y>
         <width>191</width>
         <height>18</height>
        </rect>
@@ -776,7 +831,7 @@ border-radius: 20px;      /* 圆形效果，半径设为 QLabel 宽高的一半 
       <property name="geometry">
        <rect>
         <x>295</x>
-        <y>156</y>
+        <y>184</y>
         <width>64</width>
         <height>23</height>
        </rect>
@@ -798,7 +853,7 @@ border-radius: 20px;      /* 圆形效果，半径设为 QLabel 宽高的一半 
       <property name="geometry">
        <rect>
         <x>10</x>
-        <y>185</y>
+        <y>213</y>
         <width>81</width>
         <height>24</height>
        </rect>
@@ -823,7 +878,7 @@ border-radius: 20px;      /* 圆形效果，半径设为 QLabel 宽高的一半 
       <property name="geometry">
        <rect>
         <x>100</x>
-        <y>188</y>
+        <y>216</y>
         <width>191</width>
         <height>18</height>
        </rect>
@@ -836,7 +891,7 @@ border-radius: 20px;      /* 圆形效果，半径设为 QLabel 宽高的一半 
       <property name="geometry">
        <rect>
         <x>295</x>
-        <y>186</y>
+        <y>214</y>
         <width>64</width>
         <height>23</height>
        </rect>
@@ -858,7 +913,7 @@ border-radius: 20px;      /* 圆形效果，半径设为 QLabel 宽高的一半 
       <property name="geometry">
        <rect>
         <x>10</x>
-        <y>215</y>
+        <y>243</y>
         <width>120</width>
         <height>20</height>
        </rect>
@@ -883,7 +938,7 @@ border-radius: 20px;      /* 圆形效果，半径设为 QLabel 宽高的一半 
       <property name="geometry">
        <rect>
         <x>10</x>
-        <y>240</y>
+        <y>268</y>
         <width>81</width>
         <height>24</height>
        </rect>
@@ -905,7 +960,7 @@ border-radius: 20px;      /* 圆形效果，半径设为 QLabel 宽高的一半 
       <property name="geometry">
        <rect>
         <x>100</x>
-        <y>243</y>
+        <y>271</y>
         <width>191</width>
         <height>18</height>
        </rect>
@@ -921,7 +976,7 @@ border-radius: 20px;      /* 圆形效果，半径设为 QLabel 宽高的一半 
       <property name="geometry">
        <rect>
         <x>295</x>
-        <y>241</y>
+        <y>269</y>
         <width>64</width>
         <height>23</height>
        </rect>
@@ -943,7 +998,7 @@ border-radius: 20px;      /* 圆形效果，半径设为 QLabel 宽高的一半 
       <property name="geometry">
        <rect>
         <x>10</x>
-        <y>270</y>
+        <y>298</y>
         <width>81</width>
         <height>24</height>
        </rect>
@@ -965,7 +1020,7 @@ border-radius: 20px;      /* 圆形效果，半径设为 QLabel 宽高的一半 
       <property name="geometry">
        <rect>
         <x>100</x>
-        <y>273</y>
+        <y>301</y>
         <width>191</width>
         <height>18</height>
        </rect>
@@ -981,7 +1036,7 @@ border-radius: 20px;      /* 圆形效果，半径设为 QLabel 宽高的一半 
       <property name="geometry">
        <rect>
         <x>295</x>
-        <y>271</y>
+        <y>299</y>
         <width>64</width>
         <height>23</height>
        </rect>
@@ -1003,7 +1058,7 @@ border-radius: 20px;      /* 圆形效果，半径设为 QLabel 宽高的一半 
       <property name="geometry">
        <rect>
         <x>10</x>
-        <y>300</y>
+        <y>328</y>
         <width>81</width>
         <height>24</height>
        </rect>
@@ -1025,7 +1080,7 @@ border-radius: 20px;      /* 圆形效果，半径设为 QLabel 宽高的一半 
       <property name="geometry">
        <rect>
         <x>100</x>
-        <y>303</y>
+        <y>331</y>
         <width>191</width>
         <height>18</height>
        </rect>
@@ -1041,7 +1096,7 @@ border-radius: 20px;      /* 圆形效果，半径设为 QLabel 宽高的一半 
       <property name="geometry">
        <rect>
         <x>295</x>
-        <y>301</y>
+        <y>329</y>
         <width>64</width>
         <height>23</height>
        </rect>
@@ -1063,7 +1118,7 @@ border-radius: 20px;      /* 圆形效果，半径设为 QLabel 宽高的一半 
       <property name="geometry">
        <rect>
         <x>10</x>
-        <y>330</y>
+        <y>358</y>
         <width>81</width>
         <height>24</height>
        </rect>
@@ -1085,7 +1140,7 @@ border-radius: 20px;      /* 圆形效果，半径设为 QLabel 宽高的一半 
       <property name="geometry">
        <rect>
         <x>100</x>
-        <y>333</y>
+        <y>361</y>
         <width>191</width>
         <height>18</height>
        </rect>
@@ -1101,7 +1156,7 @@ border-radius: 20px;      /* 圆形效果，半径设为 QLabel 宽高的一半 
       <property name="geometry">
        <rect>
         <x>295</x>
-        <y>331</y>
+        <y>359</y>
         <width>64</width>
         <height>23</height>
        </rect>
@@ -1123,7 +1178,7 @@ border-radius: 20px;      /* 圆形效果，半径设为 QLabel 宽高的一半 
       <property name="geometry">
        <rect>
         <x>10</x>
-        <y>360</y>
+        <y>388</y>
         <width>120</width>
         <height>20</height>
        </rect>
@@ -1148,7 +1203,7 @@ border-radius: 20px;      /* 圆形效果，半径设为 QLabel 宽高的一半 
       <property name="geometry">
        <rect>
         <x>10</x>
-        <y>386</y>
+        <y>414</y>
         <width>81</width>
         <height>24</height>
        </rect>
@@ -1170,7 +1225,7 @@ border-radius: 20px;      /* 圆形效果，半径设为 QLabel 宽高的一半 
       <property name="geometry">
        <rect>
         <x>100</x>
-        <y>389</y>
+        <y>417</y>
         <width>191</width>
         <height>18</height>
        </rect>
@@ -1186,7 +1241,7 @@ border-radius: 20px;      /* 圆形效果，半径设为 QLabel 宽高的一半 
       <property name="geometry">
        <rect>
         <x>295</x>
-        <y>387</y>
+        <y>415</y>
         <width>64</width>
         <height>23</height>
        </rect>
@@ -1208,7 +1263,7 @@ border-radius: 20px;      /* 圆形效果，半径设为 QLabel 宽高的一半 
       <property name="geometry">
        <rect>
         <x>10</x>
-        <y>416</y>
+        <y>444</y>
         <width>81</width>
         <height>24</height>
        </rect>
@@ -1230,7 +1285,7 @@ border-radius: 20px;      /* 圆形效果，半径设为 QLabel 宽高的一半 
       <property name="geometry">
        <rect>
         <x>100</x>
-        <y>419</y>
+        <y>447</y>
         <width>191</width>
         <height>18</height>
        </rect>
@@ -1246,7 +1301,7 @@ border-radius: 20px;      /* 圆形效果，半径设为 QLabel 宽高的一半 
       <property name="geometry">
        <rect>
         <x>295</x>
-        <y>417</y>
+        <y>445</y>
         <width>64</width>
         <height>23</height>
        </rect>
@@ -1268,7 +1323,7 @@ border-radius: 20px;      /* 圆形效果，半径设为 QLabel 宽高的一半 
       <property name="geometry">
        <rect>
         <x>10</x>
-        <y>446</y>
+        <y>474</y>
         <width>81</width>
         <height>24</height>
        </rect>
@@ -1290,7 +1345,7 @@ border-radius: 20px;      /* 圆形效果，半径设为 QLabel 宽高的一半 
       <property name="geometry">
        <rect>
         <x>100</x>
-        <y>449</y>
+        <y>477</y>
         <width>191</width>
         <height>18</height>
        </rect>
@@ -1306,7 +1361,7 @@ border-radius: 20px;      /* 圆形效果，半径设为 QLabel 宽高的一半 
       <property name="geometry">
        <rect>
         <x>295</x>
-        <y>447</y>
+        <y>475</y>
         <width>64</width>
         <height>23</height>
        </rect>
@@ -1328,7 +1383,7 @@ border-radius: 20px;      /* 圆形效果，半径设为 QLabel 宽高的一半 
       <property name="geometry">
        <rect>
         <x>10</x>
-        <y>476</y>
+        <y>504</y>
         <width>81</width>
         <height>24</height>
        </rect>
@@ -1350,7 +1405,7 @@ border-radius: 20px;      /* 圆形效果，半径设为 QLabel 宽高的一半 
       <property name="geometry">
        <rect>
         <x>100</x>
-        <y>479</y>
+        <y>507</y>
         <width>191</width>
         <height>18</height>
        </rect>
@@ -1366,7 +1421,7 @@ border-radius: 20px;      /* 圆形效果，半径设为 QLabel 宽高的一半 
       <property name="geometry">
        <rect>
         <x>295</x>
-        <y>477</y>
+        <y>505</y>
         <width>64</width>
         <height>23</height>
        </rect>
@@ -1390,7 +1445,7 @@ border-radius: 20px;      /* 圆形效果，半径设为 QLabel 宽高的一半 
     <property name="geometry">
      <rect>
       <x>391</x>
-      <y>195</y>
+      <y>223</y>
       <width>371</width>
       <height>130</height>
      </rect>
@@ -1405,7 +1460,7 @@ background-color: rgb(255, 255, 255);
      <property name="geometry">
       <rect>
        <x>0</x>
-       <y>8</y>
+       <y>36</y>
        <width>371</width>
        <height>28</height>
       </rect>
@@ -1428,7 +1483,7 @@ background-color: rgb(255, 255, 255);
      <property name="geometry">
       <rect>
        <x>10</x>
-       <y>45</y>
+       <y>73</y>
        <width>70</width>
        <height>24</height>
       </rect>
@@ -1447,7 +1502,7 @@ background-color: rgb(255, 255, 255);
      <property name="geometry">
       <rect>
        <x>85</x>
-       <y>45</y>
+       <y>73</y>
        <width>276</width>
        <height>24</height>
       </rect>
@@ -1466,7 +1521,7 @@ background-color: rgb(255, 255, 255);
      <property name="geometry">
       <rect>
        <x>10</x>
-       <y>80</y>
+       <y>108</y>
        <width>105</width>
        <height>34</height>
       </rect>
@@ -1491,7 +1546,7 @@ background-color: rgb(255, 255, 255);
      <property name="geometry">
       <rect>
        <x>123</x>
-       <y>80</y>
+       <y>108</y>
        <width>105</width>
        <height>34</height>
       </rect>
@@ -1516,7 +1571,7 @@ background-color: rgb(255, 255, 255);
      <property name="geometry">
       <rect>
        <x>236</x>
-       <y>80</y>
+       <y>108</y>
        <width>105</width>
        <height>34</height>
       </rect>
