@@ -32,6 +32,8 @@ from core.constants import (
     RANGE_SET,
     DET_ON,
     DET_OFF,
+    DISP_ON,
+    DISP_OFF,
     AIM_TOGGLE,
     SPD_X,
     SPD_Y,
@@ -212,6 +214,9 @@ class CaptureWorker:
         self._yolo_on = False
         self._conf = 0.5
         self._aim_range = 20
+        self._display_on = False
+        self._shm = None
+        self._shm_arr = None
 
     def run(self):
         Log.info("捕获工作进程就绪", tag="Capture")
@@ -264,32 +269,39 @@ class CaptureWorker:
         Log.info(f"屏幕分辨率 {sw}×{sh}, 捕获区域 320×320", tag="Capture")
         region = ((sw - 320) // 2, (sh - 320) // 2, 320, 320)
 
-        with DXGICapture(region) as cap:
-            while True:
-                try:
-                    if not stop.empty():
-                        c, _ = stop.get()
-                        if c in (V_OFF, MDL_SWAP):
-                            break
-
-                    self._drain_yolo_queue()
-
-                    bgra = cap.grab()
-                    if bgra is None:
-                        continue
-                    frame = bgra[..., :3]
-
-                    if self._yolo_on and self._model is not None:
-                        frame = self._infer(frame)
-
+        self._shm = shared_memory.SharedMemory(name=self._box.name)
+        self._shm_arr = np.ndarray((1, 6), dtype=np.float32, buffer=self._shm.buf)
+        try:
+            with DXGICapture(region) as cap:
+                while True:
                     try:
-                        self._msg.q("frame").put_nowait(frame)
-                    except queue.Full:
-                        pass
-                except Exception as e:
-                    Log.warn(f"捕获流中断: {e}", tag="Capture")
-                    self._msg.q("log").put((EVT_ERR, str(e)))
-                    break
+                        if not stop.empty():
+                            c, _ = stop.get()
+                            if c in (V_OFF, MDL_SWAP):
+                                break
+
+                        self._drain_yolo_queue()
+
+                        bgra = cap.grab()
+                        if bgra is None:
+                            continue
+                        frame = bgra[..., :3]
+
+                        if self._yolo_on and self._model is not None:
+                            frame = self._infer(frame)
+
+                        try:
+                            self._msg.q("frame").put_nowait(frame)
+                        except queue.Full:
+                            pass
+                    except Exception as e:
+                        Log.warn(f"捕获流中断: {e}", tag="Capture")
+                        self._msg.q("log").put((EVT_ERR, str(e)))
+                        break
+        finally:
+            self._shm.close()
+            self._shm = None
+            self._shm_arr = None
 
     def _drain_yolo_queue(self):
         yq = self._msg.q("yolo")
@@ -305,6 +317,8 @@ class CaptureWorker:
             DET_OFF: lambda: setattr(self, "_yolo_on", False),
             CONF_SET: lambda: setattr(self, "_conf", v),
             RANGE_SET: lambda: setattr(self, "_aim_range", v),
+            DISP_ON: lambda: setattr(self, "_display_on", True),
+            DISP_OFF: lambda: setattr(self, "_display_on", False),
         }
         fn = handlers.get(c)
         if fn:
@@ -325,67 +339,53 @@ class CaptureWorker:
             )
 
             boxes = res[0].boxes.xyxy
-            frame = res[0].plot()
             fh, fw = frame.shape[:2]
             cx, cy = fw / 2, fh / 2
 
-            dists = []
-            for b in boxes:
-                x1, y1, x2, y2 = b.cpu().numpy()
-                bc = ((x1 + x2) / 2, (y1 + y2) / 2)
-                dists.append(sqrt((bc[0] - cx) ** 2 + (bc[1] - cy) ** 2))
+            boxes_np = [b.cpu().numpy() for b in boxes]
+            dists = [sqrt(((x1+x2)/2-cx)**2+((y1+y2)/2-cy)**2)
+                     for x1,y1,x2,y2 in boxes_np]
 
             if dists:
-                best = boxes[int(np.argmin(dists))].cpu().numpy()
-                best_d = float(min(dists))
+                idx = int(np.argmin(dists))
+                best = boxes_np[idx]
+                best_d = float(dists[idx])
             else:
                 best = None
                 best_d = None
 
-            if self._box.name:
-                shm = shared_memory.SharedMemory(name=self._box.name)
-                arr = np.ndarray((1, 6), dtype=np.float32, buffer=shm.buf)
+            if self._shm_arr is not None:
                 with self._box.lock:
-                    arr.fill(0)
+                    self._shm_arr.fill(0)
                     if best is not None:
                         _det_counter += 1
-                        arr[0, :4] = best
-                        arr[0, 4] = best_d
-                        arr[0, 5] = _det_counter
+                        self._shm_arr[0, :4] = best
+                        self._shm_arr[0, 4] = best_d
+                        self._shm_arr[0, 5] = _det_counter
                 self._box.event.set()
-                shm.close()
 
-            cv2.circle(frame, (int(cx), int(cy)), int(self._aim_range), (173, 216, 230), 1)
+            if not self._display_on:
+                return frame
 
-            for b in boxes:
-                x1, y1, x2, y2 = b.cpu().numpy()
-                bc = (int((x1 + x2) / 2), int((y1 + y2) / 2))
-                cv2.rectangle(
-                    frame, (int(x1), int(y1)), (int(x2), int(y2)), (255, 255, 0), 2
-                )
-                cv2.circle(frame, bc, 5, (0, 0, 255), -1)
-                cv2.line(frame, bc, (int(cx), int(cy)), (255, 255, 0), 2)
-                d = sqrt((bc[0] - cx) ** 2 + (bc[1] - cy) ** 2)
-                cv2.putText(
-                    frame,
-                    f"{d:.1f}px",
-                    (int(x1), int(y1) - 10),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    0.5,
-                    (255, 0, 0),
-                    2,
-                )
+            drawn = res[0].plot()
+            cv2.circle(drawn, (int(cx), int(cy)), int(self._aim_range), (173, 216, 230), 1)
+
+            for (x1, y1, x2, y2), d in zip(boxes_np, dists):
+                bc = (int((x1+x2)/2), int((y1+y2)/2))
+                cv2.rectangle(drawn, (int(x1), int(y1)), (int(x2), int(y2)), (255, 255, 0), 2)
+                cv2.circle(drawn, bc, 5, (0, 0, 255), -1)
+                cv2.line(drawn, bc, (int(cx), int(cy)), (255, 255, 0), 2)
+                cv2.putText(drawn, f"{d:.1f}px", (int(x1), int(y1)-10),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
 
             if best is not None and best_d < self._aim_range:
                 x1, y1, x2, y2 = best
-                bc = (int((x1 + x2) / 2), int((y1 + y2) / 2))
-                cv2.rectangle(
-                    frame, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 3
-                )
-                cv2.circle(frame, bc, 5, (0, 255, 0), -1)
-                cv2.line(frame, bc, (int(cx), int(cy)), (255, 0, 0), 3)
+                bc = (int((x1+x2)/2), int((y1+y2)/2))
+                cv2.rectangle(drawn, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 3)
+                cv2.circle(drawn, bc, 5, (0, 255, 0), -1)
+                cv2.line(drawn, bc, (int(cx), int(cy)), (255, 0, 0), 3)
 
-            return frame
+            return drawn
         except Exception as e:
             Log.error(f"推理异常: {e}", tag="Capture")
             return frame
@@ -983,18 +983,21 @@ class App:
                 self._popup.close()
                 self._popup = None
             self._video_on = False
+            self._msg.broadcast(DISP_OFF, None, "yolo")
         else:
             self._ui.OpVideoButton.setText("打开视频显示中...")
             if not self._popup:
                 self._popup = VideoPopup(self._ui, on_close=self._on_popup_gone)
                 self._popup.show()
             self._video_on = True
+            self._msg.broadcast(DISP_ON, None, "yolo")
         self._sync_capture_stream()
         self._sync_video_btn()
 
     def _on_popup_gone(self):
         self._popup = None
         self._video_on = False
+        self._msg.broadcast(DISP_OFF, None, "yolo")
         self._sync_capture_stream()
         self._sync_video_btn()
 

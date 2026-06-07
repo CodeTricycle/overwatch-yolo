@@ -14,6 +14,8 @@ RANGE_SET = "detection_radius_change"
 
 DET_ON = "YOLO_start"
 DET_OFF = "YOLO_stop"
+DISP_ON = "display_on"
+DISP_OFF = "display_off"
 
 AIM_TOGGLE = "aimbot_switch_change"
 SPD_X = "h_sensitivity_change"
