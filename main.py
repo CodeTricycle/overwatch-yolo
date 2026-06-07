@@ -19,7 +19,7 @@ from ultralytics import YOLO
 from PyQt6 import QtWidgets, uic
 from PyQt6.QtCore import QTimer, Qt
 from PyQt6.QtGui import QImage, QPixmap
-from PyQt6.QtWidgets import QFileDialog, QDialog, QVBoxLayout, QLabel
+from PyQt6.QtWidgets import QFileDialog, QDialog, QVBoxLayout, QLabel, QInputDialog
 from multiprocessing import Pipe, Process, Queue, shared_memory, Event
 
 from core.constants import (
@@ -67,7 +67,7 @@ from core import input_handler
 from core import hotkey
 from core.kalman import KalmanTracker
 from core.humanize import Humanizer
-from core.dxgi_capture import DXGICapture
+import mss
 
 Settings.flush()
 
@@ -272,7 +272,9 @@ class CaptureWorker:
         self._shm = shared_memory.SharedMemory(name=self._box.name)
         self._shm_arr = np.ndarray((1, 6), dtype=np.float32, buffer=self._shm.buf)
         try:
-            with DXGICapture(region) as cap:
+            with mss.mss() as sct:
+                mon = {"left": region[0], "top": region[1],
+                       "width": region[2], "height": region[3]}
                 while True:
                     try:
                         if not stop.empty():
@@ -282,9 +284,10 @@ class CaptureWorker:
 
                         self._drain_yolo_queue()
 
-                        bgra = cap.grab()
-                        if bgra is None:
-                            continue
+                        raw = sct.grab(mon)
+                        bgra = np.frombuffer(raw.raw, dtype=np.uint8).reshape(
+                            raw.height, raw.width, 4
+                        )
                         frame = bgra[..., :3]
 
                         if self._yolo_on and self._model is not None:
@@ -954,6 +957,10 @@ class App:
                 HM_ON, ui.humanizeCheckBox.isChecked(), "aim"
             )
         )
+        ui.profileComboBox.currentTextChanged.connect(self._on_profile_changed)
+        ui.newProfileButton.clicked.connect(self._new_profile)
+        ui.renameProfileButton.clicked.connect(self._rename_profile)
+        ui.deleteProfileButton.clicked.connect(self._delete_profile)
 
     def _change_trigger(self, label):
         self._msg.broadcast(FIRE_MODE_SET, FIRE_MODE.get(label, "press"), "aim")
@@ -1100,9 +1107,53 @@ class App:
         )
         self._popup.screen.setPixmap(px)
 
+    def _load_profile_list(self):
+        cb = self._ui.profileComboBox
+        cb.blockSignals(True)
+        cb.clear()
+        for name in Settings.list_profiles():
+            cb.addItem(name)
+        cb.setCurrentText(Settings.active_profile_name())
+        cb.blockSignals(False)
+
+    def _on_profile_changed(self, name: str):
+        if not name:
+            return
+        Settings.set_active_profile(name)
+        self._apply_all()
+
+    def _new_profile(self):
+        name, ok = QInputDialog.getText(self._ui, "新建配置", "配置名称:")
+        if not ok or not name.strip():
+            return
+        name = name.strip()
+        Settings.create_profile(name)
+        Settings.set_active_profile(name)
+        self._load_profile_list()
+        self._apply_all()
+
+    def _rename_profile(self):
+        old = Settings.active_profile_name()
+        name, ok = QInputDialog.getText(self._ui, "重命名配置", "新名称:", text=old)
+        if not ok or not name.strip() or name.strip() == old:
+            return
+        Settings.rename_profile(old, name.strip())
+        self._load_profile_list()
+
+    def _delete_profile(self):
+        name = Settings.active_profile_name()
+        if len(Settings.list_profiles()) <= 1:
+            return
+        Settings.delete_profile(name)
+        remaining = Settings.list_profiles()
+        Settings.set_active_profile(remaining[0])
+        self._load_profile_list()
+        self._apply_all()
+
     def _hydrate(self):
         try:
             self._apply_all()
+            self._load_profile_list()
         except Exception as e:
             Log.error(f"配置加载失败: {e}", tag="Config")
             self._msg.q("log").put((EVT_UI_LOG, f"配置读取失败: {e}"))
