@@ -926,7 +926,7 @@ class App:
         )
         self._ui = uic.loadUi(APP_ROOT / "ui" / "VisionAimWindow.ui")
         self._ui.setWindowTitle("VisionAim")
-        self._ui.setFixedSize(772, 598)
+        self._ui.setFixedSize(772, 640)
 
         self._build_sliders()
         self._bind_buttons()
