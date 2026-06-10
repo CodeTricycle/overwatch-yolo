@@ -6,6 +6,7 @@ import queue
 import sys
 import time
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Callable, Optional
 
 import cv2
@@ -27,6 +28,7 @@ from core.constants import (
     V_ON,
     V_OFF,
     MDL_SWAP,
+    INFER_SET,
     CLS_SET,
     CONF_SET,
     RANGE_SET,
@@ -212,6 +214,9 @@ class CaptureWorker:
         self._model_path = model_path
         self._box = box
         self._model = None
+        self._backend = Settings.get("inference_backend", "cuda")
+        self._device = "cuda:0"
+        self._half = True
         self._yolo_on = False
         self._conf = 0.5
         self._aim_range = 20
@@ -241,14 +246,35 @@ class CaptureWorker:
                     Log.error(f"捕获调度异常: {e}", tag="Capture")
                     self._msg.q("log").put((EVT_ERR, str(e)))
 
+    def _base_model(self) -> Path:
+        """从已配置的模型路径推导出不含格式后缀的基础路径（如 model/ow）。"""
+        p = Path(self._model_path)
+        if p.name.endswith("_ncnn_model"):
+            return p.parent / p.name[: -len("_ncnn_model")]
+        if p.suffix in (".pt", ".engine", ".torchscript"):
+            return p.with_suffix("")
+        return p
+
+    def _resolve_backend(self):
+        """根据推理后端返回 (权重路径, device 字符串, 是否半精度)。"""
+        base = self._base_model()
+        if self._backend == "vulkan":
+            return str(base.parent / (base.name + "_ncnn_model")), "vulkan:0", False
+        return str(base.with_suffix(".pt")), "cuda:0", True
+
     def _load_model(self):
+        weight, device, half = self._resolve_backend()
+        self._device, self._half = device, half
         try:
-            if not os.path.exists(self._model_path):
-                Log.warn(f"模型文件不存在: {self._model_path}", tag="Model")
-            self._model = YOLO(self._model_path)
-            Log.success(f"模型加载完成 → {self._model_path}", tag="Model")
+            if not os.path.exists(weight):
+                Log.warn(
+                    f"模型文件不存在: {weight}（请先运行转换脚本生成对应格式）",
+                    tag="Model",
+                )
+            self._model = YOLO(weight)
+            Log.success(f"模型加载完成 [{self._backend}] → {weight}", tag="Model")
         except Exception as e:
-            Log.error(f"模型加载失败: {e}", tag="Model")
+            Log.error(f"模型加载失败 [{self._backend}]: {e}", tag="Model")
             self._msg.q("log").put((EVT_ERR, str(e)))
             self._model = None
 
@@ -352,10 +378,18 @@ class CaptureWorker:
             RANGE_SET: lambda: setattr(self, "_aim_range", v),
             DISP_ON: lambda: setattr(self, "_display_on", True),
             DISP_OFF: lambda: setattr(self, "_display_on", False),
+            INFER_SET: lambda: self._switch_backend(v),
         }
         fn = handlers.get(c)
         if fn:
             fn()
+
+    def _switch_backend(self, backend: str):
+        if backend == self._backend:
+            return
+        Log.info(f"切换推理后端 → {backend}", tag="Model")
+        self._backend = backend
+        self._load_model()
 
     def _infer(self, frame):
         global _det_counter
@@ -363,10 +397,10 @@ class CaptureWorker:
             res = self._model.predict(
                 frame,
                 save=False,
-                device="cuda:0",
+                device=self._device,
                 verbose=False,
                 save_txt=False,
-                half=True,
+                half=self._half,
                 conf=self._conf,
                 classes=[0],
             )
@@ -457,10 +491,9 @@ class AimWorker:
         buf = np.ndarray((1, 6), dtype=np.float32, buffer=shm.buf)
         try:
             while True:
-                self._poll_commands()
-                if not self._box.event.wait(timeout=0.005):
-                    continue
+                self._box.event.wait()
                 self._box.event.clear()
+                self._poll_commands()
                 with self._box.lock:
                     snap = buf.copy()
                 x1, y1, x2, y2, dist, uid = snap[0]
@@ -478,12 +511,13 @@ class AimWorker:
 
     def _poll_commands(self):
         aq = self._msg.q("aim")
-        if aq.empty():
-            return
-        item = aq.get()
-        if not isinstance(item, tuple):
-            return
-        c, v = item
+        while not aq.empty():
+            item = aq.get()
+            if not isinstance(item, tuple):
+                continue
+            self._apply_command(*item)
+
+    def _apply_command(self, c, v):
         st = self._st
         mapping = {
             AIM_TOGGLE: lambda: setattr(st, "enabled", v),
@@ -988,6 +1022,7 @@ class App:
             )
         )
         ui.captureMethodComboBox.currentTextChanged.connect(self._on_capture_method_changed)
+        ui.inferenceDeviceComboBox.currentTextChanged.connect(self._on_inference_backend_changed)
         ui.profileComboBox.currentTextChanged.connect(self._on_profile_changed)
         ui.newProfileButton.clicked.connect(self._new_profile)
         ui.renameProfileButton.clicked.connect(self._rename_profile)
@@ -1142,6 +1177,11 @@ class App:
         if method:
             Settings.set("capture_method", method)
 
+    def _on_inference_backend_changed(self, backend: str):
+        if backend:
+            Settings.set("inference_backend", backend)
+            self._msg.broadcast(INFER_SET, backend, "yolo")
+
     def _load_profile_list(self):
         cb = self._ui.profileComboBox
         cb.blockSignals(True)
@@ -1203,6 +1243,12 @@ class App:
         self._ui.captureMethodComboBox.blockSignals(True)
         self._ui.captureMethodComboBox.setCurrentText(cm)
         self._ui.captureMethodComboBox.blockSignals(False)
+
+        ib = Settings.get("inference_backend", "cuda")
+        self._ui.inferenceDeviceComboBox.blockSignals(True)
+        self._ui.inferenceDeviceComboBox.setCurrentText(ib)
+        self._ui.inferenceDeviceComboBox.blockSignals(False)
+        self._msg.broadcast(INFER_SET, ib, "yolo")
 
         self._sliders["conf"].set(int(Settings.get("threshold", 0.5) * 100))
         self._sliders["sx"].set(int(Settings.get("h_sensitivity", 0.5) * 100))

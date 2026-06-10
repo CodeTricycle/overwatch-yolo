@@ -290,6 +290,61 @@
        <string>保存配置</string>
       </property>
      </widget>
+     <widget class="QLabel" name="inferenceDeviceLabel">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>175</y>
+        <width>101</width>
+        <height>21</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <family>Microsoft YaHei</family>
+        <pointsize>12</pointsize>
+       </font>
+      </property>
+      <property name="text">
+       <string>推理方式:</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignVCenter</set>
+      </property>
+     </widget>
+     <widget class="QComboBox" name="inferenceDeviceComboBox">
+      <property name="geometry">
+       <rect>
+        <x>120</x>
+        <y>173</y>
+        <width>111</width>
+        <height>24</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <family>Microsoft YaHei</family>
+        <pointsize>10</pointsize>
+        <bold>false</bold>
+       </font>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">background-color: rgb(240, 240, 240);</string>
+      </property>
+      <property name="toolTip">
+       <string>推理后端：cuda(N卡) / vulkan(NCNN通用GPU，AMD/Intel可用)。切换后将重新加载对应格式的模型</string>
+      </property>
+      <item>
+       <property name="text">
+        <string>cuda</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>vulkan</string>
+       </property>
+      </item>
+     </widget>
     </widget>
 
    <widget class="QWidget" name="closeMessageWidget" native="true">

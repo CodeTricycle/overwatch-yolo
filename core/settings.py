@@ -20,6 +20,7 @@ PROFILE_KEYS = {
 class Settings:
     _defaults: dict = {
         "verbosity": "debug",
+        "inference_backend": "cuda",
         "detection_radius": 150,
         "threshold": 0.6,
         "h_sensitivity": 2.0,

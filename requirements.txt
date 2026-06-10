@@ -7,3 +7,6 @@ pynput>=1.7.7,<2.0.0
 pywin32>=308,<309
 pyqt6>=6.8.0,<7.0.0
 colorama
+
+# 推理后端 vulkan：NCNN + Vulkan GPU 加速（也用于 pt2ncnn 导出）
+ncnn>=1.0.20240410

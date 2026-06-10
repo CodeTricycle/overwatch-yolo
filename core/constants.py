@@ -8,6 +8,7 @@ TRIGGER_MODE_MAP = FIRE_MODE
 V_ON = "start_video"
 V_OFF = "stop_video"
 MDL_SWAP = "change_model"
+INFER_SET = "inference_backend_change"
 CLS_SET = "change_class"
 CONF_SET = "change_conf"
 RANGE_SET = "detection_radius_change"
