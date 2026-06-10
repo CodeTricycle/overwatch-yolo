@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any, Optional
 
 APP_ROOT = Path(os.path.realpath(sys.argv[0])).parent
-SETTINGS_FILE = Path(r"d:\pycharm\overwatch-yolo\settings.json")
+SETTINGS_FILE = APP_ROOT / "settings.json"
 
 PROFILE_KEYS = {
     "h_sensitivity", "v_sensitivity", "detection_radius",
@@ -37,8 +37,52 @@ class Settings:
         "kalman_measurement_noise": 2.0,
         "kalman_coast_max_frames": 5,
         "kalman_reinit_distance_threshold": 40.0,
+        "humanize_enabled": False,
+        "humanize_max_speed": 12.0,
+        "humanize_reaction_dist": 80.0,
+        "humanize_alpha": 0.55,
+        "humanize_jitter": 0.4,
+        "capture_method": "mss",
     }
     _cache: Optional[dict] = None
+
+    @classmethod
+    def _default_profile(cls) -> dict:
+        return {k: v for k, v in cls._defaults.items() if k in PROFILE_KEYS}
+
+    @classmethod
+    def _profile_from(cls, data: dict) -> dict:
+        profile = cls._default_profile()
+        profile.update({k: data[k] for k in PROFILE_KEYS if k in data})
+        return profile
+
+    @classmethod
+    def _normalize(cls, data: dict) -> dict:
+        for k, v in cls._defaults.items():
+            if k not in PROFILE_KEYS:
+                data.setdefault(k, v)
+
+        profiles = data.setdefault("profiles", {})
+        if not isinstance(profiles, dict):
+            profiles = {}
+            data["profiles"] = profiles
+
+        if not profiles:
+            profiles["Default"] = cls._profile_from(data)
+        else:
+            for name, profile in list(profiles.items()):
+                if not isinstance(profile, dict):
+                    profiles[name] = cls._default_profile()
+                    continue
+                normalized = cls._default_profile()
+                normalized.update(profile)
+                profiles[name] = normalized
+
+        active = data.setdefault("active_profile", "Default")
+        if active not in profiles:
+            data["active_profile"] = "Default" if "Default" in profiles else next(iter(profiles))
+
+        return data
 
     @classmethod
     def _read_file(cls) -> dict:
@@ -48,17 +92,7 @@ class Settings:
         except FileNotFoundError:
             data = cls._defaults.copy()
 
-        if "profiles" not in data:
-            data["profiles"] = {}
-        data.setdefault("active_profile", "Default")
-
-        if not data["profiles"]:
-            default_data = {k: data[k] for k in PROFILE_KEYS if k in data}
-            if not default_data:
-                default_data = {k: v for k, v in cls._defaults.items() if k in PROFILE_KEYS}
-            data["profiles"]["Default"] = default_data
-
-        return data
+        return cls._normalize(data)
 
     @classmethod
     def _profile_data(cls) -> dict:
