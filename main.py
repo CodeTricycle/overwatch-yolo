@@ -1092,6 +1092,18 @@ class App:
         self._sync_capture_stream()
 
     def _browse_model(self):
+        backend = Settings.get("inference_backend", "cuda")
+        if backend == "vulkan":
+            path = QFileDialog.getExistingDirectory(
+                self._ui,
+                "选择 NCNN 模型目录",
+                "",
+            )
+            if path:
+                self._ui.modelFileLabel.setText(os.path.basename(path))
+                self._model_path = path
+            return
+
         path, _ = QFileDialog.getOpenFileName(
             self._ui,
             "选择模型文件",
