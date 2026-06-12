@@ -10,3 +10,6 @@ colorama
 
 # 推理后端 vulkan：NCNN + Vulkan GPU 加速（也用于 pt2ncnn 导出）
 ncnn>=1.0.20240410
+
+# 推理后端 directml：Windows DirectML GPU 加速
+torch-directml>=0.2.5

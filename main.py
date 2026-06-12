@@ -77,6 +77,16 @@ Settings.flush()
 _det_counter = 0
 
 
+def _directml_device():
+    try:
+        import torch_directml
+    except ImportError as e:
+        raise RuntimeError(
+            "DirectML 后端需要安装 torch-directml：pip install torch-directml"
+        ) from e
+    return torch_directml.device()
+
+
 @dataclass
 class AimState:
     h_sens: float = 0.2
@@ -260,6 +270,8 @@ class CaptureWorker:
         base = self._base_model()
         if self._backend == "vulkan":
             return str(base.parent / (base.name + "_ncnn_model")), "vulkan:0", False
+        if self._backend == "directml":
+            return str(base.with_suffix(".pt")), _directml_device(), False
         return str(base.with_suffix(".pt")), "cuda:0", True
 
     def _load_model(self):
@@ -394,16 +406,25 @@ class CaptureWorker:
     def _infer(self, frame):
         global _det_counter
         try:
-            res = self._model.predict(
-                frame,
-                save=False,
-                device=self._device,
-                verbose=False,
-                save_txt=False,
-                half=self._half,
-                conf=self._conf,
-                classes=[0],
-            )
+            predict_args = {
+                "source": frame,
+                "save": False,
+                "device": self._device,
+                "verbose": False,
+                "save_txt": False,
+                "half": self._half,
+                "conf": self._conf,
+                "classes": [0],
+            }
+            if self._backend == "vulkan":
+                predict_args.update(
+                    {
+                        "imgsz": 320,
+                        "iou": 0.45,
+                        "max_det": 10,
+                    }
+                )
+            res = self._model.predict(**predict_args)
 
             boxes = res[0].boxes.xyxy
             fh, fw = frame.shape[:2]

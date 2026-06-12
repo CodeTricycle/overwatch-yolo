@@ -895,7 +895,7 @@ QLabel#statusDisplayLabel {
             <item row="1" column="1" colspan="2">
              <widget class="QComboBox" name="inferenceDeviceComboBox">
               <property name="toolTip">
-               <string>推理后端：cuda(N卡) / vulkan(NCNN通用GPU，AMD/Intel可用)。切换后将重新加载对应格式的模型</string>
+               <string>推理后端：cuda(N卡) / directml(Windows通用GPU) / vulkan(NCNN通用GPU)。切换后将重新加载对应格式的模型</string>
               </property>
               <item>
                <property name="text">
@@ -905,6 +905,11 @@ QLabel#statusDisplayLabel {
               <item>
                <property name="text">
                 <string>vulkan</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>directml</string>
                </property>
               </item>
              </widget>
